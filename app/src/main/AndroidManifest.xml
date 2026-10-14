@@ -25,10 +25,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenSSTPClient"
         tools:targetApi="n">
+        
 <activity
-    android:name=".activity.ServerListActivity"
-    android:exported="false" />
-    </activity>
+    android:exported="false"
+    android:name=".activity.ServerListActivity">
+</activity>
 
         <activity
             android:exported="true"
