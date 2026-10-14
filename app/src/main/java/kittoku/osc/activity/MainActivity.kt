@@ -154,9 +154,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-                 R.id.action_get_free_config -> {
+            R.id.action_get_free_config -> {
                 val intent = Intent(this, ServerListActivity::class.java)
                 startActivityForResult(intent, 1001)
             }
@@ -178,6 +178,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1001 && resultCode == RESULT_OK) {
+            val selectedHost = data?.getStringExtra("SELECTED_HOST")
+            if (!selectedHost.isNullOrEmpty()) {
+                prefs.edit().putString(OscPrefKey.HOME_HOSTNAME, selectedHost).apply()
+                recreate()
+                Toast.makeText(this, "کانفیگ تنظیم شد: $selectedHost", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun showSaveDialog() {
