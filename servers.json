@@ -1,202 +1,202 @@
 [
     {
-        "host_name": "vpn100383739",
-        "ip": "128.211.249.131",
-        "country": "US",
-        "country_name": "United States",
-        "speed_mbps": 64.54,
-        "ping": 6,
+        "host_name": "public-vpn-100",
+        "ip": "219.100.37.57",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 129.17,
+        "ping": 14,
+        "sessions": 280,
+        "score": 3003937
+    },
+    {
+        "host_name": "public-vpn-258",
+        "ip": "219.100.37.190",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 134.09,
+        "ping": 16,
+        "sessions": 78,
+        "score": 2944635
+    },
+    {
+        "host_name": "public-vpn-257",
+        "ip": "219.100.37.208",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 244.28,
+        "ping": 11,
         "sessions": 100,
-        "score": 4601265
+        "score": 2900906
     },
     {
-        "host_name": "vpn918840683",
-        "ip": "38.34.239.132",
-        "country": "US",
-        "country_name": "United States",
-        "speed_mbps": 348.58,
-        "ping": 13,
-        "sessions": 163,
-        "score": 4231313
-    },
-    {
-        "host_name": "public-vpn-251",
-        "ip": "219.100.37.223",
+        "host_name": "public-vpn-52",
+        "ip": "219.100.37.16",
         "country": "JP",
         "country_name": "Japan",
-        "speed_mbps": 193.16,
-        "ping": 9,
-        "sessions": 85,
-        "score": 2878715
-    },
-    {
-        "host_name": "public-vpn-182",
-        "ip": "219.100.37.177",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 489.93,
-        "ping": 27,
-        "sessions": 86,
-        "score": 2665913
-    },
-    {
-        "host_name": "public-vpn-68",
-        "ip": "219.100.37.17",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 231.79,
-        "ping": 23,
-        "sessions": 56,
-        "score": 2465781
-    },
-    {
-        "host_name": "public-vpn-220",
-        "ip": "219.100.37.221",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 143.05,
-        "ping": 17,
-        "sessions": 52,
-        "score": 2264749
-    },
-    {
-        "host_name": "public-vpn-148",
-        "ip": "219.100.37.107",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 200.52,
-        "ping": 15,
-        "sessions": 34,
-        "score": 2143431
-    },
-    {
-        "host_name": "public-vpn-210",
-        "ip": "219.100.37.198",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 208.01,
+        "speed_mbps": 255.15,
         "ping": 12,
-        "sessions": 83,
-        "score": 2002485
-    },
-    {
-        "host_name": "public-vpn-156",
-        "ip": "219.100.37.95",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 192.81,
-        "ping": 23,
-        "sessions": 66,
-        "score": 1979178
-    },
-    {
-        "host_name": "public-vpn-39",
-        "ip": "219.100.37.3",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 322.79,
-        "ping": 33,
-        "sessions": 173,
-        "score": 1966367
-    },
-    {
-        "host_name": "public-vpn-61",
-        "ip": "219.100.37.51",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 186.85,
-        "ping": 8,
-        "sessions": 65,
-        "score": 1917859
-    },
-    {
-        "host_name": "public-vpn-147",
-        "ip": "219.100.37.119",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 236.68,
-        "ping": 11,
-        "sessions": 115,
-        "score": 1909375
-    },
-    {
-        "host_name": "public-vpn-139",
-        "ip": "219.100.37.105",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 221.28,
-        "ping": 8,
-        "sessions": 58,
-        "score": 1874197
-    },
-    {
-        "host_name": "public-vpn-184",
-        "ip": "219.100.37.162",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 400.7,
-        "ping": 11,
-        "sessions": 126,
-        "score": 1806767
+        "sessions": 109,
+        "score": 2695814
     },
     {
         "host_name": "public-vpn-90",
         "ip": "219.100.37.55",
         "country": "JP",
         "country_name": "Japan",
-        "speed_mbps": 167.97,
-        "ping": 11,
-        "sessions": 173,
-        "score": 1697932
+        "speed_mbps": 144.47,
+        "ping": 23,
+        "sessions": 187,
+        "score": 2661593
     },
     {
-        "host_name": "vpn788502559",
-        "ip": "220.254.220.117",
+        "host_name": "public-vpn-209",
+        "ip": "219.100.37.215",
         "country": "JP",
         "country_name": "Japan",
-        "speed_mbps": 210.56,
-        "ping": 15,
-        "sessions": 76,
-        "score": 1547882
+        "speed_mbps": 143.42,
+        "ping": 22,
+        "sessions": 43,
+        "score": 2491732
     },
     {
-        "host_name": "public-vpn-159",
-        "ip": "219.100.37.112",
+        "host_name": "public-vpn-50",
+        "ip": "219.100.37.14",
         "country": "JP",
         "country_name": "Japan",
-        "speed_mbps": 176.76,
+        "speed_mbps": 191.17,
+        "ping": 17,
+        "sessions": 88,
+        "score": 2472270
+    },
+    {
+        "host_name": "public-vpn-118",
+        "ip": "219.100.37.87",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 158.97,
+        "ping": 12,
+        "sessions": 70,
+        "score": 2358484
+    },
+    {
+        "host_name": "public-vpn-84",
+        "ip": "219.100.37.29",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 174.33,
+        "ping": 22,
+        "sessions": 87,
+        "score": 2357641
+    },
+    {
+        "host_name": "public-vpn-47",
+        "ip": "219.100.37.11",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 113.29,
+        "ping": 10,
+        "sessions": 83,
+        "score": 2298672
+    },
+    {
+        "host_name": "public-vpn-162",
+        "ip": "219.100.37.125",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 122.67,
+        "ping": 12,
+        "sessions": 65,
+        "score": 2258918
+    },
+    {
+        "host_name": "public-vpn-197",
+        "ip": "219.100.37.211",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 143.67,
+        "ping": 19,
+        "sessions": 153,
+        "score": 2257586
+    },
+    {
+        "host_name": "public-vpn-211",
+        "ip": "219.100.37.168",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 129.22,
+        "ping": 22,
+        "sessions": 38,
+        "score": 2085322
+    },
+    {
+        "host_name": "public-vpn-117",
+        "ip": "219.100.37.61",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 132.5,
         "ping": 16,
-        "sessions": 46,
-        "score": 1539836
+        "sessions": 63,
+        "score": 1955208
     },
     {
-        "host_name": "vpn521065574",
-        "ip": "221.144.146.230",
+        "host_name": "public-vpn-142",
+        "ip": "219.100.37.114",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 332.3,
+        "ping": 26,
+        "sessions": 81,
+        "score": 1834387
+    },
+    {
+        "host_name": "public-vpn-259",
+        "ip": "219.100.37.176",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 140.61,
+        "ping": 11,
+        "sessions": 124,
+        "score": 1749791
+    },
+    {
+        "host_name": "public-vpn-210",
+        "ip": "219.100.37.198",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 140.57,
+        "ping": 16,
+        "sessions": 103,
+        "score": 1743764
+    },
+    {
+        "host_name": "public-vpn-182",
+        "ip": "219.100.37.177",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 447.5,
+        "ping": 12,
+        "sessions": 85,
+        "score": 1621600
+    },
+    {
+        "host_name": "vpn836362296",
+        "ip": "120.75.221.37",
+        "country": "JP",
+        "country_name": "Japan",
+        "speed_mbps": 956.05,
+        "ping": 4,
+        "sessions": 59,
+        "score": 1497105
+    },
+    {
+        "host_name": "vpn168089679",
+        "ip": "119.197.246.215",
         "country": "KR",
         "country_name": "Korea Republic of",
-        "speed_mbps": 78.28,
-        "ping": 29,
-        "sessions": 89,
-        "score": 1509505
-    },
-    {
-        "host_name": "vpn195786351",
-        "ip": "60.94.36.8",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 77.83,
-        "ping": 6,
-        "sessions": 13,
-        "score": 1464269
-    },
-    {
-        "host_name": "public-vpn-67",
-        "ip": "219.100.37.84",
-        "country": "JP",
-        "country_name": "Japan",
-        "speed_mbps": 257.95,
-        "ping": 21,
-        "sessions": 57,
-        "score": 1432394
+        "speed_mbps": 92.47,
+        "ping": 34,
+        "sessions": 82,
+        "score": 1469146
     }
 ]
