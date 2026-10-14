@@ -8,6 +8,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import kittoku.osc.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -22,7 +23,6 @@ class ServerListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // این فایل XML که ساختیم رو به این اکتیویتی وصل می‌کنه
         setContentView(R.layout.activity_server_list)
 
         title = "Get Free Config"
@@ -31,7 +31,6 @@ class ServerListActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         containerServers = findViewById(R.id.containerServers)
 
-        // دانلود لیست سرورها به محض باز شدن صفحه
         fetchAndDisplayServers()
     }
 
@@ -79,7 +78,7 @@ class ServerListActivity : AppCompatActivity() {
         val tvTitle = TextView(this).apply {
             text = hostName
             textSize = 16f
-            textStyle = android.graphics.Typeface.BOLD
+            setTypeface(null, android.graphics.Typeface.BOLD)
         }
 
         val tvDetails = TextView(this).apply {
@@ -90,10 +89,9 @@ class ServerListActivity : AppCompatActivity() {
         val btnUse = Button(this).apply {
             text = "Use Now"
             setOnClickListener {
-                // اینجا هاست انتخاب شده رو برمی‌گردونیم صفحه اول
                 val resultIntent = intent.putExtra("SELECTED_HOST", hostName)
                 setResult(RESULT_OK, resultIntent)
-                finish() // بستن این صفحه و برگشت به صفحه اول
+                finish()
             }
         }
 
