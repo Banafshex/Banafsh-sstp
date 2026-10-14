@@ -156,6 +156,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+     R.id.action_get_free_config -> {
+                Toast.makeText(this, "Get Free Config clicked", Toast.LENGTH_SHORT).show()
+            }
+
             R.id.load_profile -> {
                 profileLauncher.launch(Intent(this, BlankActivity::class.java).putExtra(
                     EXTRA_KEY_TYPE,
