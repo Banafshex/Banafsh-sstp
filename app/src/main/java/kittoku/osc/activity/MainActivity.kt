@@ -180,12 +180,12 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1001 && resultCode == RESULT_OK) {
             val selectedHost = data?.getStringExtra("SELECTED_HOST")
             if (!selectedHost.isNullOrEmpty()) {
-                prefs.edit().putString(OscPrefKey.HOME_HOSTNAME, selectedHost).apply()
+                prefs.edit().putString(OscPrefKey.HOME_HOSTNAME.name, selectedHost).apply()
                 recreate()
                 Toast.makeText(this, "کانفیگ تنظیم شد: $selectedHost", Toast.LENGTH_SHORT).show()
             }
