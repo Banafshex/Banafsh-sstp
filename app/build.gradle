@@ -4,6 +4,11 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.4.10'
 }
 
+// Release builds (GitHub Actions) pass these values through environment variables.
+// Normal debug builds simply use the defaults below.
+def appVersionName = System.getenv("VERSION_NAME") ?: "1.0.0-beta.1-dev"
+def appVersionCode = (System.getenv("VERSION_CODE") ?: "50").toInteger()
+
 android {
     namespace 'kittoku.osc'
 
@@ -13,16 +18,32 @@ android {
         applicationId "com.banafsh.sstp"
         minSdk 23
         targetSdk 36
-        versionCode 50
-        versionName "1.10.3"
+        versionCode appVersionCode
+        versionName appVersionName
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEYSTORE_FILE")
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            if (System.getenv("KEYSTORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
