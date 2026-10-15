@@ -63,7 +63,7 @@
         <kittoku.osc.preference.custom.LogDirPreference android:key="LOG_DIR"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="BANAFSHEX">
+    <PreferenceCategory android:title="ARASH-BANAFSHX">
         <Preference
             android:key="ABOUT_BANAFSH"
             android:persistent="false"
