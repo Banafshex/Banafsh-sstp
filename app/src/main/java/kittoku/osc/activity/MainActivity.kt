@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.text.util.Linkify
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -20,6 +21,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
@@ -59,7 +63,8 @@ private const val WELCOME_MESSAGE =
     "برای استفاده‌ی راحت کاربران ایرانی: با زدن کلید سه‌نقطه (⋮) در بالای صفحه، گزینه‌ی Get Free Config را بزنید و یک سرور انتخاب کنید.\n\n" +
     "سرورهای بخش Get Free Config هر چند ساعت یا چند روز یک‌بار به‌صورت خودکار به‌روزرسانی می‌شوند. این سرورها را کاربران داوطلب، که اغلب در ژاپن هستند، در اختیار همه گذاشته‌اند و ممکن است گاهی با افت سرعت یا قطعی روبه‌رو شوند.\n\n" +
     "لطفاً برای ورود به حساب‌های مهم و بانکی از این سرویس استفاده نکنید.\n\n" +
-    "این برنامه توسط ARASH-BANAFSHX بر پایه‌ی Open SSTP Client (ساخته‌ی kittoku) ساخته شده است."
+    "این برنامه توسط ARASH-BANAFSHX بر پایه‌ی Open SSTP Client (ساخته‌ی kittoku) ساخته شده است.\n\n" +
+    "کانال تلگرام: https://t.me/Banafsh_sstp"
 
 private data class FreeServer(
     val host: String,
@@ -139,13 +144,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
         super.onCreate(savedInstanceState)
 
         title = "${getString(R.string.app_name)}: ${BuildConfig.VERSION_NAME}"
 
         val binding = ActivityMainBinding.inflate(layoutInflater)
-        binding.root.fitsSystemWindows = true
         setContentView(binding.root)
+
+        setSupportActionBar(binding.toolbar)
+        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
+        ViewCompat.setOnApplyWindowInsetsListener(binding.pager) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(bars.left, 0, bars.right, bars.bottom)
+            insets
+        }
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
@@ -286,6 +301,7 @@ class MainActivity : AppCompatActivity() {
             textSize = 15f
             textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             setLineSpacing(0f, 1.2f)
+            Linkify.addLinks(this, Linkify.WEB_URLS)
         }
 
         val checkBox = AppCompatCheckBox(this).apply {

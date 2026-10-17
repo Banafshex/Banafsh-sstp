@@ -69,5 +69,10 @@
             android:persistent="false"
             android:title="About Banafsh"
             android:summary="نمایش دوباره‌ی توضیحات برنامه"/>
+        <Preference
+            android:key="TELEGRAM_CHANNEL"
+            android:persistent="false"
+            android:title="Telegram Channel"
+            android:summary="t.me/Banafsh_sstp"/>
     </PreferenceCategory>
 </PreferenceScreen>

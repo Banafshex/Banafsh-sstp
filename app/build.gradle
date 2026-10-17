@@ -7,7 +7,9 @@ plugins {
 // Release builds (GitHub Actions) pass these values through environment variables.
 // Normal debug builds simply use the defaults below.
 def appVersionName = System.getenv("VERSION_NAME") ?: "1.0.0-beta.1-dev"
-def appVersionCode = (System.getenv("VERSION_CODE") ?: "50").toInteger()
+def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER")
+// debug builds on GitHub get an always-increasing version code, so each new APK installs over the previous one
+def appVersionCode = (System.getenv("VERSION_CODE") ?: (ciRunNumber ? (ciRunNumber.toInteger() + 1000).toString() : "50")).toInteger()
 
 android {
     namespace 'kittoku.osc'

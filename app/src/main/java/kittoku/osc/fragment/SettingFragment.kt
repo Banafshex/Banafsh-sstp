@@ -3,6 +3,7 @@ package kittoku.osc.fragment
 import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.preference.Preference
@@ -64,6 +65,7 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         setLogDirListener()
         setSelectAppsListener()
         setAboutListener()
+        setTelegramListener()
     }
 
     private fun setCertDirListener() {
@@ -103,6 +105,19 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("ABOUT_BANAFSH")?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
                 (activity as? MainActivity)?.showAboutDialog()
+
+                true
+            }
+    }
+
+    private fun setTelegramListener() {
+        findPreference<Preference>("TELEGRAM_CHANNEL")?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/Banafsh_sstp")))
+                } catch (e: Exception) {
+                    // no app can open the link
+                }
 
                 true
             }
