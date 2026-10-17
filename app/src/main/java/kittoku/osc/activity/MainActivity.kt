@@ -1,9 +1,14 @@
 package kittoku.osc.activity
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
@@ -13,6 +18,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -21,6 +27,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -35,17 +42,23 @@ import com.google.android.material.tabs.TabLayoutMediator
 import kittoku.osc.BuildConfig
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
+import kittoku.osc.flagEmoji
 import kittoku.osc.extension.firstEditText
 import kittoku.osc.extension.sum
 import kittoku.osc.fragment.HomeFragment
 import kittoku.osc.fragment.SettingFragment
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.PROFILE_KEY_HEADER
+import kittoku.osc.preference.accessor.getBooleanPrefValue
+import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.custom.OscPreference
 import kittoku.osc.preference.deserializeProfile
 import kittoku.osc.preference.importProfile
 import kittoku.osc.preference.serializeProfile
+import kittoku.osc.service.ACTION_VPN_CONNECT
+import kittoku.osc.service.ACTION_VPN_DISCONNECT
+import kittoku.osc.service.SstpVpnService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedOutputStream
@@ -70,13 +83,14 @@ private data class FreeServer(
     val host: String,
     val port: Int,
     val country: String,
+    val countryCode: String,
     val speedMbps: Double,
     val ping: Int,
 )
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
-    private lateinit var homeFragment: PreferenceFragmentCompat
+    private lateinit var homeFragment: Fragment
     private lateinit var settingFragment: PreferenceFragmentCompat
 
     private val uiPrefs: SharedPreferences by lazy {
@@ -124,7 +138,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePreferenceView() {
-        listOf(homeFragment, settingFragment).forEach { fragment ->
+        listOf(settingFragment).forEach { fragment ->
             if (fragment.isAdded) {
                 val preferenceGroups = mutableListOf<PreferenceGroup>(fragment.preferenceScreen)
 
@@ -218,7 +232,6 @@ class MainActivity : AppCompatActivity() {
             R.id.save_profile -> showSaveDialog()
             R.id.import_profile -> importLauncher.launch(arrayOf("*/*"))
             R.id.export_profile -> showExportDialog()
-            R.id.get_free_config -> showFreeConfig()
             R.id.reload_defaults -> showReloadDialog()
         }
 
@@ -391,7 +404,7 @@ class MainActivity : AppCompatActivity() {
 
     // ---- Get Free Config -------------------------------------------------
 
-    private fun showFreeConfig() {
+    internal fun showFreeConfig() {
         Toast.makeText(this, "در حال دریافت لیست سرورها…", Toast.LENGTH_SHORT).show()
 
         Thread {
@@ -443,6 +456,7 @@ class MainActivity : AppCompatActivity() {
                         host = host,
                         port = port,
                         country = obj.optString("country_name"),
+                        countryCode = obj.optString("country"),
                         speedMbps = obj.optDouble("speed_mbps", 0.0),
                         ping = obj.optInt("ping", 0),
                     )
@@ -457,7 +471,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFreeServerDialog(servers: List<FreeServer>) {
         val labels = servers.map {
-            "${it.country} | ${it.host.substringBefore('.')} | " +
+            "${flagEmoji(it.countryCode)} ${it.country} | ${it.host.substringBefore('.')} | " +
                     "${String.format(Locale.US, "%.0f", it.speedMbps)} Mbps | ping ${it.ping}"
         }.toTypedArray()
 
@@ -493,18 +507,19 @@ class MainActivity : AppCompatActivity() {
         return optJSONObject(name) ?: JSONObject().also { put(name, it) }
     }
 
-    private fun applyFreeServer(server: FreeServer) {
-        // Start from the current settings so that nothing else (e.g. the app list) is lost.
+    private fun applyServerSettings(host: String, port: Int, user: String, pass: String, disableVerify: Boolean): Boolean {
         val profile = try {
             val json = JSONObject(serializeProfile(prefs))
 
             json.section("stringSetting").also {
-                it.put("HOME_HOSTNAME", server.host)
-                it.put("HOME_USERNAME", "vpn")
-                it.put("HOME_PASSWORD", "vpn")
+                it.put("HOME_HOSTNAME", host)
+                it.put("HOME_USERNAME", user)
+                it.put("HOME_PASSWORD", pass)
             }
-            json.section("intSetting").put("SSL_PORT", server.port)
-            json.section("booleanSetting").put("SSL_DO_VERIFY", false)
+            json.section("intSetting").put("SSL_PORT", port)
+            if (disableVerify) {
+                json.section("booleanSetting").put("SSL_DO_VERIFY", false)
+            }
 
             deserializeProfile(json.toString())
         } catch (e: Exception) {
@@ -512,17 +527,129 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (profile == null) {
+            return false
+        }
+
+        importProfile(profile, prefs)
+        return true
+    }
+
+    private fun applyFreeServer(server: FreeServer) {
+        if (!applyServerSettings(server.host, server.port, "vpn", "vpn", true)) {
             Toast.makeText(this, "تنظیم سرور ناموفق بود", Toast.LENGTH_SHORT).show()
             return
         }
 
-        importProfile(profile, prefs)
+        uiPrefs.edit()
+            .putString("server_host", server.host)
+            .putString("server_country", server.countryCode)
+            .apply()
         updatePreferenceView()
 
-        Toast.makeText(
+        Toast.makeText(this, "سرور ${server.host} تنظیم شد؛ در حال اتصال…", Toast.LENGTH_LONG).show()
+        connectNow()
+    }
+
+    // ---- Server dialog ---------------------------------------------------
+
+    internal fun showServerDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_server, null)
+        val etHost = view.findViewById<EditText>(R.id.etHost)
+        val etPort = view.findViewById<EditText>(R.id.etPort)
+        val etUser = view.findViewById<EditText>(R.id.etUser)
+        val etPass = view.findViewById<EditText>(R.id.etPass)
+
+        etHost.setText(getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs))
+        etPort.setText(getIntPrefValue(OscPrefKey.SSL_PORT, prefs).toString())
+        etUser.setText(getStringPrefValue(OscPrefKey.HOME_USERNAME, prefs))
+        etPass.setText(getStringPrefValue(OscPrefKey.HOME_PASSWORD, prefs))
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.bs_server_dialog_title)
+            .setView(view)
+            .setPositiveButton(R.string.bs_save, null)
+            .setNegativeButton(R.string.bs_cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val host = etHost.text.toString().trim()
+                val port = etPort.text.toString().trim().toIntOrNull()
+
+                when {
+                    host.isEmpty() -> etHost.error = getString(R.string.bs_err_address)
+                    port == null || port !in 1..65535 -> etPort.error = getString(R.string.bs_err_port)
+                    else -> {
+                        if (applyServerSettings(host, port, etUser.text.toString(), etPass.text.toString(), false)) {
+                            Toast.makeText(this, R.string.bs_saved, Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                    }
+                }
+            }
+        }
+
+        dialog.show()
+    }
+
+    // ---- Connection log (technical details) -------------------------------
+
+    internal fun showLogDialog() {
+        val text = getStringPrefValue(OscPrefKey.HOME_STATUS, prefs).ifEmpty { getString(R.string.bs_log_empty) }
+
+        val body = TextView(this).apply {
+            this.text = text
+            textSize = 13f
+            setTextIsSelectable(true)
+            setPadding(dp(24), dp(16), dp(24), dp(8))
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.bs_log_title)
+            .setView(ScrollView(this).apply { addView(body) })
+            .setPositiveButton(R.string.bs_copy) { _, _ ->
+                val manager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                manager.setPrimaryClip(ClipData.newPlainText("Banafsh-sstp log", text))
+                Toast.makeText(this, R.string.bs_copied, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.bs_close, null)
+            .show()
+    }
+
+    // ---- Connect / disconnect ---------------------------------------------
+
+    private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            startVpnService()
+        }
+    }
+
+    internal fun connectNow() {
+        val intent = VpnService.prepare(this)
+
+        if (intent != null) {
+            vpnPermissionLauncher.launch(intent)
+        } else {
+            startVpnService()
+        }
+    }
+
+    private fun startVpnService() {
+        ContextCompat.startForegroundService(
             this,
-            "سرور ${server.host} با پورت ${server.port} تنظیم شد. حالا اتصال را روشن کنید.",
-            Toast.LENGTH_LONG
-        ).show()
+            Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
+        )
+    }
+
+    internal fun disconnectNow() {
+        startService(Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_DISCONNECT))
+    }
+
+    internal fun toggleConnection() {
+        if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+            disconnectNow()
+        } else {
+            connectNow()
+        }
     }
 }

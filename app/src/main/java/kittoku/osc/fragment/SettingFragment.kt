@@ -66,6 +66,7 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         setSelectAppsListener()
         setAboutListener()
         setTelegramListener()
+        setLogListener()
     }
 
     private fun setCertDirListener() {
@@ -118,6 +119,15 @@ internal class SettingFragment : PreferenceFragmentCompat() {
                 } catch (e: Exception) {
                     // no app can open the link
                 }
+
+                true
+            }
+    }
+
+    private fun setLogListener() {
+        findPreference<Preference>("CONNECTION_LOG")?.onPreferenceClickListener =
+            Preference.OnPreferenceClickListener {
+                (activity as? MainActivity)?.showLogDialog()
 
                 true
             }

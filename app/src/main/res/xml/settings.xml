@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Connection">
+        <Preference
+            android:key="CONNECTION_LOG"
+            android:persistent="false"
+            android:title="Connection Log"
+            android:summary="Technical details of the current connection"/>
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="SSL Layer">
         <kittoku.osc.preference.custom.SSLPortPreference android:key="SSL_PORT"/>
         <kittoku.osc.preference.custom.SSLVersionPreference android:key="SSL_VERSION"/>

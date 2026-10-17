@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_status_disconnected">قطع است</string>
+    <string name="bs_status_connecting">در حال اتصال…</string>
+    <string name="bs_status_connected">وصل است</string>
+    <string name="bs_hint_disconnected">یک سرور رایگان انتخاب کنید و اتصال را بزنید</string>
+    <string name="bs_hint_connecting">کمی صبر کنید…</string>
+    <string name="bs_hint_connected">اتصال برقرار است</string>
+    <string name="bs_connect">اتصال</string>
+    <string name="bs_connecting_cancel">لغو</string>
+    <string name="bs_disconnect">قطع اتصال</string>
+    <string name="bs_server_address">آدرس سرور</string>
+    <string name="bs_no_server">برای وارد کردن سرور لمس کنید</string>
+    <string name="bs_choose_free">انتخاب سرور رایگان</string>
+    <string name="bs_server_dialog_title">تنظیمات سرور</string>
+    <string name="bs_hint_port">پورت</string>
+    <string name="bs_hint_username">نام کاربری</string>
+    <string name="bs_hint_password">رمز عبور</string>
+    <string name="bs_save">ذخیره</string>
+    <string name="bs_cancel">انصراف</string>
+    <string name="bs_err_address">آدرس سرور را وارد کنید</string>
+    <string name="bs_err_port">پورت باید بین ۱ تا ۶۵۵۳۵ باشد</string>
+    <string name="bs_saved">سرور ذخیره شد</string>
+    <string name="bs_log_title">گزارش اتصال</string>
+    <string name="bs_log_empty">هنوز اتصالی برقرار نشده</string>
+    <string name="bs_copy">کپی</string>
+    <string name="bs_close">بستن</string>
+    <string name="bs_copied">کپی شد</string>
+</resources>

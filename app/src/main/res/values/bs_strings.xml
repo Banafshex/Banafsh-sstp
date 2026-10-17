@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_status_disconnected">Disconnected</string>
+    <string name="bs_status_connecting">Connecting…</string>
+    <string name="bs_status_connected">Connected</string>
+    <string name="bs_hint_disconnected">Pick a free server, then tap Connect</string>
+    <string name="bs_hint_connecting">Please wait…</string>
+    <string name="bs_hint_connected">You are connected</string>
+    <string name="bs_connect">Connect</string>
+    <string name="bs_connecting_cancel">Cancel</string>
+    <string name="bs_disconnect">Disconnect</string>
+    <string name="bs_server_address">Server Address</string>
+    <string name="bs_no_server">Tap to enter a server</string>
+    <string name="bs_choose_free">Choose a free server</string>
+    <string name="bs_server_dialog_title">Server settings</string>
+    <string name="bs_hint_port">Port</string>
+    <string name="bs_hint_username">Username</string>
+    <string name="bs_hint_password">Password</string>
+    <string name="bs_save">Save</string>
+    <string name="bs_cancel">Cancel</string>
+    <string name="bs_err_address">Enter the server address</string>
+    <string name="bs_err_port">Port must be between 1 and 65535</string>
+    <string name="bs_saved">Server saved</string>
+    <string name="bs_log_title">Connection Log</string>
+    <string name="bs_log_empty">No connection yet</string>
+    <string name="bs_copy">Copy</string>
+    <string name="bs_close">Close</string>
+    <string name="bs_copied">Copied</string>
+</resources>
