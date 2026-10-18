@@ -9,6 +9,15 @@
         <item name="colorSecondaryVariant">@color/banafsh_cyan</item>
         <item name="colorOnSecondary">@color/banafsh_ink</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:fontFamily">@font/vazirmatn</item>
+        <item name="fontFamily">@font/vazirmatn</item>
+        <item name="textAppearanceButton">@style/TextAppearance.Banafsh.Button</item>
+        <item name="textAppearanceSubtitle1">@style/TextAppearance.Banafsh.Subtitle1</item>
+        <item name="textAppearanceSubtitle2">@style/TextAppearance.Banafsh.Subtitle2</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.Banafsh.Body1</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.Banafsh.Body2</item>
+        <item name="textAppearanceHeadline6">@style/TextAppearance.Banafsh.Headline6</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.Banafsh.Caption</item>
     </style>
 
     <!-- Used by MainActivity: it draws its own purple toolbar. -->
