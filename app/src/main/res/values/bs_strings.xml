@@ -32,9 +32,15 @@
     <string name="bs_free_title">Choose a server</string>
     <string name="bs_test_again">Test again</string>
     <string name="bs_test_running">Testing servers… %1$d of %2$d</string>
-    <string name="bs_test_done">Test finished: %1$d working server(s)</string>
+    <string name="bs_test_done">%1$d working · healthy ones on top</string>
     <string name="bs_test_none">No server answered from your network. Try again in a few minutes.</string>
     <string name="bs_test_vpn_on">To test the servers, disconnect first.</string>
-    <string name="bs_server_failed">Not reachable</string>
+    <string name="bs_server_failed">Failed</string>
     <string name="bs_ping_ms">%1$d ms</string>
+    <string name="bs_servers_title">Free servers</string>
+    <string name="bs_test_all">Test all</string>
+    <string name="bs_load_running">Loading the server list…</string>
+    <string name="bs_load_failed">Could not load the server list. Check your internet and try again.</string>
+    <string name="bs_pill_testing">Testing…</string>
+    <string name="bs_connect_anyway">This server did not respond. Connect anyway?</string>
 </resources>
