@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -72,7 +74,23 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         setTelegramListener()
         setLogListener()
         setThemeListener()
+        setLanguageListener()
         setAdvancedToggle()
+    }
+
+    private fun setLanguageListener() {
+        val pref = findPreference<ListPreference>("LANGUAGE") ?: return
+        val current = AppCompatDelegate.getApplicationLocales()
+
+        // "system" means no override: the phone's language decides (Persian, otherwise English).
+        pref.value = if (current.isEmpty) "system" else current[0]?.language ?: "system"
+
+        pref.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+            val tag = (newValue as? String).orEmpty().let { if (it == "system") "" else it }
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+
+            true
+        }
     }
 
     private val advancedKeys = listOf(

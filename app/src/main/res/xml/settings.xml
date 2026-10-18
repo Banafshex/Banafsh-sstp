@@ -1,31 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory android:title="Connection">
+    <PreferenceCategory android:title="@string/bs_set_connection">
         <Preference
             android:key="CONNECTION_LOG"
             android:persistent="false"
-            android:title="Connection Log"
-            android:summary="Technical details of the current connection"/>
+            android:title="@string/bs_set_log_title"
+            android:summary="@string/bs_set_log_summary"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Appearance">
+    <PreferenceCategory android:title="@string/bs_set_appearance">
         <ListPreference
             android:key="THEME_MODE"
-            android:title="Theme"
+            android:title="@string/bs_set_theme"
             android:entries="@array/bs_theme_entries"
             android:entryValues="@array/bs_theme_values"
             android:defaultValue="system"
             app:useSimpleSummaryProvider="true"/>
+        <ListPreference
+            android:key="LANGUAGE"
+            android:persistent="false"
+            android:title="@string/bs_set_language"
+            android:entries="@array/bs_lang_entries"
+            android:entryValues="@array/bs_lang_values"
+            app:useSimpleSummaryProvider="true"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Reconnection">
+    <PreferenceCategory android:title="@string/bs_set_reconnection">
         <kittoku.osc.preference.custom.ReconnectionEnabledPreference android:key="RECONNECTION_ENABLED"/>
         <kittoku.osc.preference.custom.ReconnectionCountPreference android:key="RECONNECTION_COUNT"/>
         <kittoku.osc.preference.custom.ReconnectionIntervalPreference android:key="RECONNECTION_INTERVAL"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="HTTP Proxy">
+    <PreferenceCategory android:title="@string/bs_set_proxy">
         <kittoku.osc.preference.custom.ProxyDoUseProxyPreference android:key="PROXY_DO_USE_PROXY"/>
         <kittoku.osc.preference.custom.ProxyHostnamePreference android:key="PROXY_HOSTNAME"/>
         <kittoku.osc.preference.custom.ProxyPortPreference android:key="PROXY_PORT"/>
@@ -33,7 +40,7 @@
         <kittoku.osc.preference.custom.ProxyPasswordPreference android:key="PROXY_PASSWORD"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="App-Based Routing">
+    <PreferenceCategory android:title="@string/bs_set_routing">
         <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE"/>
         <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS"/>
     </PreferenceCategory>
@@ -42,19 +49,19 @@
         <Preference
             android:key="ABOUT_BANAFSH"
             android:persistent="false"
-            android:title="About Banafsh"
-            android:summary="نمایش دوباره‌ی توضیحات برنامه"/>
+            android:title="@string/bs_set_about"
+            android:summary="@string/bs_set_about_summary"/>
         <Preference
             android:key="TELEGRAM_CHANNEL"
             android:persistent="false"
-            android:title="Telegram Channel"
+            android:title="@string/bs_set_telegram"
             android:summary="t.me/Banafsh_sstp"/>
     </PreferenceCategory>
 
     <Preference
         android:key="ADVANCED_TOGGLE"
         android:persistent="false"
-        android:title="Advanced"
+        android:title="@string/bs_set_advanced"
         android:summary="SSL, PPP, DNS, Routing, Log"/>
 
     <PreferenceCategory android:key="ADV_SSL" android:title="SSL Layer">

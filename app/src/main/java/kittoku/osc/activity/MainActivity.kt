@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (text == null) {
-                Toast.makeText(this, "فایل خوانده نشد", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.bs_file_read_failed, Toast.LENGTH_SHORT).show()
             } else {
                 showImportConfirm(text)
             }
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            Toast.makeText(this, "PROFILE EXPORTED", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.bs_profile_exported, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -197,12 +197,8 @@ class MainActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this).also {
             it.setView(inflated)
-            it.setMessage(sum(
-                "Enter the profile's name.\n",
-                "If blank, the hostname will be used.\n",
-                "If duplicated, the profile will be overwritten."
-            ))
-            it.setPositiveButton("SAVE") { _, _ ->
+            it.setMessage(R.string.bs_save_msg)
+            it.setPositiveButton(R.string.bs_save) { _, _ ->
                 prefs.edit().also { editor ->
                     editor.putString(
                         PROFILE_KEY_HEADER + editText.text.ifEmpty { hostname },
@@ -212,9 +208,9 @@ class MainActivity : AppCompatActivity() {
                     editor.apply()
                 }
 
-                Toast.makeText(this, "PROFILE SAVED", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.bs_profile_saved, Toast.LENGTH_SHORT).show()
             }
-            it.setNegativeButton("CANCEL") { _, _ -> }
+            it.setNegativeButton(R.string.bs_cancel) { _, _ -> }
             it.show()
         }
     }
@@ -223,27 +219,25 @@ class MainActivity : AppCompatActivity() {
         val filename = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs) + ".json"
 
         AlertDialog.Builder(this).also {
-            it.setMessage(
-                "Password will be also exported as plain text. If you don't want that, blank Password before exporting."
-            )
-            it.setPositiveButton("PROCEED") { _, _ ->
+            it.setMessage(R.string.bs_export_msg)
+            it.setPositiveButton(R.string.bs_proceed) { _, _ ->
                 exportLauncher.launch(filename)
             }
-            it.setNegativeButton("CANCEL") { _, _ -> }
+            it.setNegativeButton(R.string.bs_cancel) { _, _ -> }
             it.show()
         }
     }
 
     private fun showReloadDialog() {
         AlertDialog.Builder(this).also {
-            it.setMessage("Are you sure to reload the default settings?")
-            it.setPositiveButton("YES") { _, _ ->
+            it.setMessage(R.string.bs_reload_msg)
+            it.setPositiveButton(R.string.bs_yes) { _, _ ->
                 importProfile(null, prefs)
                 updatePreferenceView()
 
-                Toast.makeText(this, "DEFAULTS RELOADED", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.bs_defaults_reloaded, Toast.LENGTH_SHORT).show()
             }
-            it.setNegativeButton("NO") { _, _ -> }
+            it.setNegativeButton(R.string.bs_no) { _, _ -> }
             it.show()
         }
     }
@@ -272,26 +266,28 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (profile == null || host.isEmpty()) {
-            Toast.makeText(this, "فایل یا متن کانفیگ معتبر نیست", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.bs_config_invalid, Toast.LENGTH_LONG).show()
             return
         }
 
-        val message = "آدرس سرور: $host\n" +
-                "پورت: $port\n" +
-                "نام کاربری: ${user.ifEmpty { "(خالی)" }}\n" +
-                "رمز عبور: ${pass.ifEmpty { "(خالی)" }}\n\n" +
-                "با تأیید، این کانفیگ جایگزین کانفیگ فعلی می‌شود و برنامه آماده‌ی استفاده است."
+        val message = getString(
+            R.string.bs_config_msg,
+            host,
+            port,
+            user.ifEmpty { getString(R.string.bs_empty) },
+            pass.ifEmpty { getString(R.string.bs_empty) }
+        )
 
         AlertDialog.Builder(this).also {
-            it.setTitle("کانفیگ جدید")
+            it.setTitle(R.string.bs_config_title)
             it.setMessage(message)
-            it.setPositiveButton("استفاده از این کانفیگ") { _, _ ->
+            it.setPositiveButton(R.string.bs_config_use) { _, _ ->
                 importProfile(profile, prefs)
                 updatePreferenceView()
 
-                Toast.makeText(this, "کانفیگ ذخیره شد و آماده‌ی استفاده است", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.bs_config_saved, Toast.LENGTH_LONG).show()
             }
-            it.setNegativeButton("انصراف") { _, _ -> }
+            it.setNegativeButton(R.string.bs_cancel) { _, _ -> }
             it.show()
         }
     }
@@ -351,7 +347,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyFreeServer(server: FreeServer) {
         if (!applyServerSettings(server.host, server.port, "vpn", "vpn", true)) {
-            Toast.makeText(this, "تنظیم سرور ناموفق بود", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -361,7 +357,7 @@ class MainActivity : AppCompatActivity() {
             .apply()
         updatePreferenceView()
 
-        Toast.makeText(this, "سرور ${server.host} تنظیم شد؛ در حال اتصال…", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.bs_server_set_connecting, server.host), Toast.LENGTH_LONG).show()
         connectNow()
     }
 

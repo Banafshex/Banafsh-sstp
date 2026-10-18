@@ -177,3 +177,23 @@ com.paziresh24
 com.sanags.a4f3client
 com.dotin.wepod
 com.sharjbook
+
+# File sharing and local-network apps (they need a direct connection)
+com.samsung.android.app.sharelive
+com.miui.mishare.connectivity
+com.xiaomi.midrop
+com.lenovo.anyshare.gps
+cn.xender
+com.dewmobile.kuaiya.play
+com.vivo.easyshare
+com.huawei.android.instantshare
+com.coloros.oshare
+com.estmob.android.sendanywhere
+org.localsend.localsend_app
+com.google.android.tv.remote.service
+com.google.android.tv.remote
+
+# Mail apps
+com.google.android.gm
+com.microsoft.office.outlook
+ch.protonmail.android

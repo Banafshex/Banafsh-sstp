@@ -28,12 +28,12 @@ class BlankActivity : AppCompatActivity() {
 
         when (intent.extras!!.getInt(EXTRA_KEY_TYPE)) {
             BLANK_ACTIVITY_TYPE_PROFILES -> {
-                title = "Profiles"
+                title = getString(R.string.bs_title_profiles)
                 fragment = ProfilesFragment()
             }
 
             BLANK_ACTIVITY_TYPE_APPS -> {
-                title = "Allowed/Disallowed Apps"
+                title = getString(R.string.bs_title_apps)
                 fragment = AppsFragment()
             }
 
@@ -42,7 +42,7 @@ class BlankActivity : AppCompatActivity() {
             }
 
             BLANK_ACTIVITY_TYPE_SETTINGS -> {
-                title = "Settings"
+                title = getString(R.string.bs_menu_settings)
                 fragment = SettingFragment()
             }
 

@@ -2,20 +2,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/open_settings"
-        android:title="Settings"/>
+        android:title="@string/bs_menu_settings"/>
     <item
         android:id="@+id/load_profile"
-        android:title="Load Profile"/>
+        android:title="@string/bs_menu_load_profile"/>
     <item
         android:id="@+id/save_profile"
-        android:title="Save Profile" />
+        android:title="@string/bs_menu_save_profile" />
     <item
         android:id="@+id/import_profile"
-        android:title="Import Profile" />
+        android:title="@string/bs_menu_import_profile" />
     <item
         android:id="@+id/export_profile"
-        android:title="Export Profile" />
+        android:title="@string/bs_menu_export_profile" />
     <item
         android:id="@+id/reload_defaults"
-        android:title="Reload Defaults" />
+        android:title="@string/bs_menu_reload_defaults" />
 </menu>

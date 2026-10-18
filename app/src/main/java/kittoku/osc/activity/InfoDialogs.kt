@@ -20,21 +20,12 @@ import kittoku.osc.preference.accessor.getStringPrefValue
 
 internal const val KEY_HIDE_WELCOME = "hide_welcome"
 
-internal const val WELCOME_MESSAGE =
-    "این برنامه یک VPN مستقل نیست و بر پایه‌ی کانفیگ‌هایی کار می‌کند که کاربر داخل آن وارد یا انتخاب می‌کند.\n\n" +
-    "برای استفاده‌ی راحت کاربران ایرانی: با زدن کلید سه‌نقطه (⋮) در بالای صفحه، گزینه‌ی Get Free Config را بزنید و یک سرور انتخاب کنید.\n\n" +
-    "سرورهای بخش Get Free Config هر چند ساعت یا چند روز یک‌بار به‌صورت خودکار به‌روزرسانی می‌شوند. این سرورها را کاربران داوطلب، که اغلب در ژاپن هستند، در اختیار همه گذاشته‌اند و ممکن است گاهی با افت سرعت یا قطعی روبه‌رو شوند.\n\n" +
-    "لطفاً برای ورود به حساب‌های مهم و بانکی از این سرویس استفاده نکنید.\n\n" +
-    "این برنامه توسط ARASH-BANAFSHX بر پایه‌ی Open SSTP Client (ساخته‌ی kittoku) ساخته شده است.\n\n" +
-    "کانال تلگرام: https://t.me/Banafsh_sstp"
-
-
 internal fun showWelcomeDialog(activity: AppCompatActivity) {
-    showInfoDialog(activity, "به Banafsh-sstp خوش آمدید", true)
+    showInfoDialog(activity, activity.getString(R.string.bs_welcome_title), true)
 }
 
 internal fun showAboutDialog(activity: AppCompatActivity) {
-    showInfoDialog(activity, "درباره‌ی Banafsh-sstp", false)
+    showInfoDialog(activity, activity.getString(R.string.bs_about_title), false)
 }
 
 private fun showInfoDialog(activity: AppCompatActivity, title: String, withCheckbox: Boolean) {
@@ -42,7 +33,7 @@ private fun showInfoDialog(activity: AppCompatActivity, title: String, withCheck
     val dp = { value: Int -> (value * density).toInt() }
 
     val message = TextView(activity).apply {
-        text = WELCOME_MESSAGE
+        text = activity.getString(R.string.bs_welcome_message)
         textSize = 15f
         textAlignment = View.TEXT_ALIGNMENT_VIEW_START
         setLineSpacing(0f, 1.2f)
@@ -50,13 +41,12 @@ private fun showInfoDialog(activity: AppCompatActivity, title: String, withCheck
     }
 
     val checkBox = AppCompatCheckBox(activity).apply {
-        text = "دیگر این پیام را نشانم نده"
+        text = activity.getString(R.string.bs_dont_show_again)
         textAlignment = View.TEXT_ALIGNMENT_VIEW_START
     }
 
     val container = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
-        layoutDirection = View.LAYOUT_DIRECTION_RTL
         setPadding(dp(24), dp(16), dp(24), dp(8))
         addView(message)
 
@@ -75,7 +65,7 @@ private fun showInfoDialog(activity: AppCompatActivity, title: String, withCheck
         it.setTitle(title)
         it.setView(ScrollView(activity).apply { addView(container) })
         it.setCancelable(!withCheckbox)
-        it.setPositiveButton("بستن") { _, _ ->
+        it.setPositiveButton(R.string.bs_close) { _, _ ->
             if (withCheckbox && checkBox.isChecked) {
                 activity.getSharedPreferences("banafsh_ui", Context.MODE_PRIVATE)
                     .edit().putBoolean(KEY_HIDE_WELCOME, true).apply()

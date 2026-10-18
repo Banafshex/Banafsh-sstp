@@ -10,6 +10,8 @@ internal object IranApps {
     const val KEY_ENABLED = "iran_bypass_enabled"
 
     private const val REMOTE_URL = "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/iran_apps.txt"
+    // Raise this number whenever res/raw/iran_apps.txt gets new entries.
+    private const val SEED_VERSION = 2
     private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
 
     fun parse(text: String): Set<String> {
@@ -24,9 +26,14 @@ internal object IranApps {
 
     // The built-in list is used until a newer one has been downloaded.
     fun ensureSeeded(context: Context, prefs: SharedPreferences) {
-        if (prefs.getStringSet(KEY_LIST, null).isNullOrEmpty()) {
+        val ui = context.getSharedPreferences("banafsh_ui", Context.MODE_PRIVATE)
+
+        if (prefs.getStringSet(KEY_LIST, null).isNullOrEmpty() || ui.getInt("iran_seed_version", 0) < SEED_VERSION) {
             val text = context.resources.openRawResource(R.raw.iran_apps).bufferedReader(Charsets.UTF_8).use { it.readText() }
             prefs.edit().putStringSet(KEY_LIST, HashSet(parse(text))).apply()
+
+            // Check the online list again soon, so a newer online list replaces the built-in one.
+            ui.edit().putInt("iran_seed_version", SEED_VERSION).putLong("iran_list_checked", 0L).apply()
         }
     }
 
