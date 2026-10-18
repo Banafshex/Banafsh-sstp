@@ -43,6 +43,7 @@ import kittoku.osc.BuildConfig
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
 import kittoku.osc.IranApps
+import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
 import kittoku.osc.extension.firstEditText
 import kittoku.osc.extension.sum
@@ -70,16 +71,6 @@ import java.util.Locale
 private const val FREE_SERVERS_URL =
     "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json"
 
-private const val KEY_HIDE_WELCOME = "hide_welcome"
-
-private const val WELCOME_MESSAGE =
-    "این برنامه یک VPN مستقل نیست و بر پایه‌ی کانفیگ‌هایی کار می‌کند که کاربر داخل آن وارد یا انتخاب می‌کند.\n\n" +
-    "برای استفاده‌ی راحت کاربران ایرانی: با زدن کلید سه‌نقطه (⋮) در بالای صفحه، گزینه‌ی Get Free Config را بزنید و یک سرور انتخاب کنید.\n\n" +
-    "سرورهای بخش Get Free Config هر چند ساعت یا چند روز یک‌بار به‌صورت خودکار به‌روزرسانی می‌شوند. این سرورها را کاربران داوطلب، که اغلب در ژاپن هستند، در اختیار همه گذاشته‌اند و ممکن است گاهی با افت سرعت یا قطعی روبه‌رو شوند.\n\n" +
-    "لطفاً برای ورود به حساب‌های مهم و بانکی از این سرویس استفاده نکنید.\n\n" +
-    "این برنامه توسط ARASH-BANAFSHX بر پایه‌ی Open SSTP Client (ساخته‌ی kittoku) ساخته شده است.\n\n" +
-    "کانال تلگرام: https://t.me/Banafsh_sstp"
-
 private data class FreeServer(
     val host: String,
     val port: Int,
@@ -91,8 +82,6 @@ private data class FreeServer(
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
-    private lateinit var homeFragment: Fragment
-    private lateinit var settingFragment: PreferenceFragmentCompat
 
     private val uiPrefs: SharedPreferences by lazy {
         getSharedPreferences("banafsh_ui", MODE_PRIVATE)
@@ -139,26 +128,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePreferenceView() {
-        listOf(settingFragment).forEach { fragment ->
-            if (fragment.isAdded) {
-                val preferenceGroups = mutableListOf<PreferenceGroup>(fragment.preferenceScreen)
-
-                while (preferenceGroups.isNotEmpty()) {
-                    preferenceGroups.removeAt(0).forEach {
-                        if (it is OscPreference) {
-                            it.updateView()
-                        }
-
-                        if (it is PreferenceGroup) {
-                            preferenceGroups.add(it)
-                        }
-                    }
-                }
-            }
-        }
+        // Home refreshes itself from the preferences; Settings reads them when it is opened.
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeMode.apply(PreferenceManager.getDefaultSharedPreferences(this).getString("THEME_MODE", "system"))
         setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
         super.onCreate(savedInstanceState)
 
@@ -169,7 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
-        ViewCompat.setOnApplyWindowInsetsListener(binding.pager) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
@@ -181,30 +155,9 @@ class MainActivity : AppCompatActivity() {
         IranApps.ensureSeeded(this, prefs)
         IranApps.refreshIfDue(this, prefs)
 
-        homeFragment = HomeFragment()
-        settingFragment = SettingFragment()
-
-        object : FragmentStateAdapter(this) {
-            override fun getItemCount() = 2
-
-            override fun createFragment(position: Int): Fragment {
-                return when (position) {
-                    0 -> homeFragment
-                    1 -> settingFragment
-                    else -> throw NotImplementedError(position.toString())
-                }
-            }
-        }.also {
-            binding.pager.adapter = it
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction().replace(R.id.container, HomeFragment()).commit()
         }
-
-        TabLayoutMediator(binding.tabBar, binding.pager) { tab, position ->
-            tab.text = when (position) {
-                0 -> "HOME"
-                1 -> "SETTING"
-                else -> throw NotImplementedError(position.toString())
-            }
-        }.attach()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -213,7 +166,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null && !uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
-            showInfoDialog("به Banafsh-sstp خوش آمدید", withCheckbox = true)
+            showWelcomeDialog(this)
         }
     }
 
@@ -225,6 +178,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.open_settings -> startActivity(
+                Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
+            )
+
             R.id.load_profile -> {
                 profileLauncher.launch(Intent(this, BlankActivity::class.java).putExtra(
                     EXTRA_KEY_TYPE,
@@ -299,60 +256,6 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "DEFAULTS RELOADED", Toast.LENGTH_SHORT).show()
             }
             it.setNegativeButton("NO") { _, _ -> }
-            it.show()
-        }
-    }
-
-    // ---- Welcome / About dialog -----------------------------------------
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
-
-    internal fun showAboutDialog() {
-        showInfoDialog("درباره‌ی Banafsh-sstp", withCheckbox = false)
-    }
-
-    private fun showInfoDialog(title: String, withCheckbox: Boolean) {
-        val message = TextView(this).apply {
-            text = WELCOME_MESSAGE
-            textSize = 15f
-            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-            setLineSpacing(0f, 1.2f)
-            Linkify.addLinks(this, Linkify.WEB_URLS)
-        }
-
-        val checkBox = AppCompatCheckBox(this).apply {
-            text = "دیگر این پیام را نشانم نده"
-            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-        }
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(24), dp(16), dp(24), dp(8))
-            addView(message)
-
-            if (withCheckbox) {
-                addView(
-                    checkBox,
-                    LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply { topMargin = dp(16) }
-                )
-            }
-        }
-
-        val scroll = ScrollView(this).apply { addView(container) }
-
-        AlertDialog.Builder(this).also {
-            it.setTitle(title)
-            it.setView(scroll)
-            it.setCancelable(!withCheckbox)
-            it.setPositiveButton("بستن") { _, _ ->
-                if (withCheckbox && checkBox.isChecked) {
-                    uiPrefs.edit().putBoolean(KEY_HIDE_WELCOME, true).apply()
-                }
-            }
             it.show()
         }
     }
@@ -593,30 +496,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
-    }
-
-    // ---- Connection log (technical details) -------------------------------
-
-    internal fun showLogDialog() {
-        val text = getStringPrefValue(OscPrefKey.HOME_STATUS, prefs).ifEmpty { getString(R.string.bs_log_empty) }
-
-        val body = TextView(this).apply {
-            this.text = text
-            textSize = 13f
-            setTextIsSelectable(true)
-            setPadding(dp(24), dp(16), dp(24), dp(8))
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(R.string.bs_log_title)
-            .setView(ScrollView(this).apply { addView(body) })
-            .setPositiveButton(R.string.bs_copy) { _, _ ->
-                val manager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                manager.setPrimaryClip(ClipData.newPlainText("Banafsh-sstp log", text))
-                Toast.makeText(this, R.string.bs_copied, Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(R.string.bs_close, null)
-            .show()
     }
 
     // ---- Connect / disconnect ---------------------------------------------

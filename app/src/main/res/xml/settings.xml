@@ -1,11 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:initialExpandedChildrenCount="6">
     <PreferenceCategory android:title="Connection">
         <Preference
             android:key="CONNECTION_LOG"
             android:persistent="false"
             android:title="Connection Log"
             android:summary="Technical details of the current connection"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Appearance">
+        <ListPreference
+            android:key="THEME_MODE"
+            android:title="Theme"
+            android:entries="@array/bs_theme_entries"
+            android:entryValues="@array/bs_theme_values"
+            android:defaultValue="system"
+            app:useSimpleSummaryProvider="true"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Reconnection">
+        <kittoku.osc.preference.custom.ReconnectionEnabledPreference android:key="RECONNECTION_ENABLED"/>
+        <kittoku.osc.preference.custom.ReconnectionCountPreference android:key="RECONNECTION_COUNT"/>
+        <kittoku.osc.preference.custom.ReconnectionIntervalPreference android:key="RECONNECTION_INTERVAL"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="HTTP Proxy">
+        <kittoku.osc.preference.custom.ProxyDoUseProxyPreference android:key="PROXY_DO_USE_PROXY"/>
+        <kittoku.osc.preference.custom.ProxyHostnamePreference android:key="PROXY_HOSTNAME"/>
+        <kittoku.osc.preference.custom.ProxyPortPreference android:key="PROXY_PORT"/>
+        <kittoku.osc.preference.custom.ProxyUsernamePreference android:key="PROXY_USERNAME"/>
+        <kittoku.osc.preference.custom.ProxyPasswordPreference android:key="PROXY_PASSWORD"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="App-Based Routing">
+        <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE"/>
+        <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="ARASH-BANAFSHX">
+        <Preference
+            android:key="ABOUT_BANAFSH"
+            android:persistent="false"
+            android:title="About Banafsh"
+            android:summary="نمایش دوباره‌ی توضیحات برنامه"/>
+        <Preference
+            android:key="TELEGRAM_CHANNEL"
+            android:persistent="false"
+            android:title="Telegram Channel"
+            android:summary="t.me/Banafsh_sstp"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="SSL Layer">
@@ -18,14 +62,6 @@
         <kittoku.osc.preference.custom.SSLSuitesPreference android:key="SSL_SUITES"/>
         <kittoku.osc.preference.custom.SSLDoUseCustomSNIPreference android:key="SSL_DO_USE_CUSTOM_SNI"/>
         <kittoku.osc.preference.custom.SSLCustomSNIHostnamePreference android:key="SSL_CUSTOM_SNI"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="HTTP Proxy">
-        <kittoku.osc.preference.custom.ProxyDoUseProxyPreference android:key="PROXY_DO_USE_PROXY"/>
-        <kittoku.osc.preference.custom.ProxyHostnamePreference android:key="PROXY_HOSTNAME"/>
-        <kittoku.osc.preference.custom.ProxyPortPreference android:key="PROXY_PORT"/>
-        <kittoku.osc.preference.custom.ProxyUsernamePreference android:key="PROXY_USERNAME"/>
-        <kittoku.osc.preference.custom.ProxyPasswordPreference android:key="PROXY_PASSWORD"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="PPP Layer">
@@ -51,36 +87,15 @@
         <kittoku.osc.preference.custom.DNSCustomAddressPreference android:key="DNS_CUSTOM_ADDRESS"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Routing">
+    <PreferenceCategory android:title="Routing (advanced)">
         <kittoku.osc.preference.custom.RouteDoAddDefaultRoutePreference android:key="ROUTE_DO_ADD_DEFAULT_ROUTE"/>
         <kittoku.osc.preference.custom.RouteDoRoutePrivateAddresses android:key="ROUTE_DO_ROUTE_PRIVATE_ADDRESSES"/>
         <kittoku.osc.preference.custom.RouteDoAddCustomRoutesPreference android:key="ROUTE_DO_ADD_CUSTOM_ROUTES"/>
         <kittoku.osc.preference.custom.RouteCustomRoutesPreference android:key="ROUTE_CUSTOM_ROUTES"/>
-        <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE"/>
-        <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="Reconnection">
-        <kittoku.osc.preference.custom.ReconnectionEnabledPreference android:key="RECONNECTION_ENABLED"/>
-        <kittoku.osc.preference.custom.ReconnectionCountPreference android:key="RECONNECTION_COUNT"/>
-        <kittoku.osc.preference.custom.ReconnectionIntervalPreference android:key="RECONNECTION_INTERVAL"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Log">
         <kittoku.osc.preference.custom.LogDoSaveLogPreference android:key="LOG_DO_SAVE_LOG"/>
         <kittoku.osc.preference.custom.LogDirPreference android:key="LOG_DIR"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="ARASH-BANAFSHX">
-        <Preference
-            android:key="ABOUT_BANAFSH"
-            android:persistent="false"
-            android:title="About Banafsh"
-            android:summary="نمایش دوباره‌ی توضیحات برنامه"/>
-        <Preference
-            android:key="TELEGRAM_CHANNEL"
-            android:persistent="false"
-            android:title="Telegram Channel"
-            android:summary="t.me/Banafsh_sstp"/>
     </PreferenceCategory>
 </PreferenceScreen>

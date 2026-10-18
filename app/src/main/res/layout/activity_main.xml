@@ -16,22 +16,13 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/banafsh_purple"
-            app:titleTextColor="@android:color/white"
+            android:theme="@style/Theme.OpenSSTPClient.AppBarOverlay"
             app:popupTheme="@style/Theme.OpenSSTPClient.PopupOverlay"
-            android:theme="@style/Theme.OpenSSTPClient.AppBarOverlay" />
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/banafsh_purple"
-            app:tabIndicatorColor="@color/banafsh_cyan"
-            app:tabSelectedTextColor="@android:color/white"
-            app:tabTextColor="#CCFFFFFF" />
+            app:titleTextColor="@android:color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/pager"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />

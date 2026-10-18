@@ -6,13 +6,17 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kittoku.osc.R
 import kittoku.osc.activity.BLANK_ACTIVITY_TYPE_APPS
 import kittoku.osc.activity.BlankActivity
 import kittoku.osc.activity.EXTRA_KEY_TYPE
-import kittoku.osc.activity.MainActivity
+import kittoku.osc.ThemeMode
+import kittoku.osc.activity.showAboutDialog
+import kittoku.osc.activity.showLogDialog
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.setURIPrefValue
 import kittoku.osc.preference.custom.DirectoryPreference
@@ -67,6 +71,7 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         setAboutListener()
         setTelegramListener()
         setLogListener()
+        setThemeListener()
     }
 
     private fun setCertDirListener() {
@@ -105,7 +110,7 @@ internal class SettingFragment : PreferenceFragmentCompat() {
     private fun setAboutListener() {
         findPreference<Preference>("ABOUT_BANAFSH")?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
-                (activity as? MainActivity)?.showAboutDialog()
+                (activity as? AppCompatActivity)?.let { showAboutDialog(it) }
 
                 true
             }
@@ -127,7 +132,16 @@ internal class SettingFragment : PreferenceFragmentCompat() {
     private fun setLogListener() {
         findPreference<Preference>("CONNECTION_LOG")?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
-                (activity as? MainActivity)?.showLogDialog()
+                (activity as? AppCompatActivity)?.let { showLogDialog(it) }
+
+                true
+            }
+    }
+
+    private fun setThemeListener() {
+        findPreference<ListPreference>("THEME_MODE")?.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _, newValue ->
+                ThemeMode.apply(newValue as? String)
 
                 true
             }
