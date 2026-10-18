@@ -72,6 +72,30 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         setTelegramListener()
         setLogListener()
         setThemeListener()
+        setAdvancedToggle()
+    }
+
+    private val advancedKeys = listOf(
+        "ADV_SSL", "ADV_PPP", "ADV_PPP_AUTH", "ADV_PPP_NET", "ADV_DNS", "ADV_ROUTING", "ADV_LOG"
+    )
+
+    private fun setAdvancedToggle() {
+        val toggle = findPreference<Preference>("ADVANCED_TOGGLE") ?: return
+        var expanded = false
+
+        fun apply() {
+            advancedKeys.forEach { findPreference<Preference>(it)?.isVisible = expanded }
+            toggle.setIcon(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more)
+        }
+
+        apply()
+
+        toggle.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            expanded = !expanded
+            apply()
+
+            true
+        }
     }
 
     private fun setCertDirListener() {

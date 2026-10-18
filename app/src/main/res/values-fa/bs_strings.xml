@@ -29,4 +29,12 @@
     <string name="bs_bypass_title">برنامه‌های ایرانی بدون VPN</string>
     <string name="bs_bypass_summary">بانک‌ها و برنامه‌های ایرانی مستقیم وصل می‌شوند</string>
     <string name="bs_bypass_reconnect">تغییر از اتصال بعدی اعمال می‌شود. یک‌بار قطع و دوباره وصل کنید.</string>
+    <string name="bs_free_title">انتخاب سرور</string>
+    <string name="bs_test_again">تست دوباره</string>
+    <string name="bs_test_running">در حال تست سرورها… %1$d از %2$d</string>
+    <string name="bs_test_done">تست تمام شد: %1$d سرور سالم</string>
+    <string name="bs_test_none">هیچ سروری از اینترنت شما جواب نداد. چند دقیقه بعد دوباره امتحان کنید.</string>
+    <string name="bs_test_vpn_on">برای تست سرورها، اول اتصال را قطع کنید.</string>
+    <string name="bs_server_failed">در دسترس نیست</string>
+    <string name="bs_ping_ms">%1$d ms</string>
 </resources>
