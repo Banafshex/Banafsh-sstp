@@ -26,4 +26,7 @@
     <string name="bs_copy">کپی</string>
     <string name="bs_close">بستن</string>
     <string name="bs_copied">کپی شد</string>
+    <string name="bs_bypass_title">برنامه‌های ایرانی بدون VPN</string>
+    <string name="bs_bypass_summary">بانک‌ها و برنامه‌های ایرانی مستقیم وصل می‌شوند</string>
+    <string name="bs_bypass_reconnect">تغییر از اتصال بعدی اعمال می‌شود. یک‌بار قطع و دوباره وصل کنید.</string>
 </resources>

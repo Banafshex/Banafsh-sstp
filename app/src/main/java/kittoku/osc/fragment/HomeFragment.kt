@@ -14,9 +14,12 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
+import kittoku.osc.IranApps
 import kittoku.osc.R
 import kittoku.osc.activity.MainActivity
 import kittoku.osc.flagEmoji
@@ -46,6 +49,13 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         view.findViewById<View>(R.id.btnFree).setOnClickListener {
             (activity as? MainActivity)?.showFreeConfig()
         }
+        view.findViewById<SwitchMaterial>(R.id.swBypass).setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(IranApps.KEY_ENABLED, checked).apply()
+
+            if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+                Toast.makeText(requireContext(), R.string.bs_bypass_reconnect, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onStart() {
@@ -71,6 +81,13 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             on && established -> 2
             on -> 1
             else -> 0
+        }
+
+        v.findViewById<SwitchMaterial>(R.id.swBypass).apply {
+            val enabled = prefs.getBoolean(IranApps.KEY_ENABLED, true)
+            if (isChecked != enabled) {
+                isChecked = enabled
+            }
         }
 
         val purple = ContextCompat.getColor(ctx, R.color.banafsh_purple)

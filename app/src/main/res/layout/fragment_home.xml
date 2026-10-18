@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/bs_bg"
     android:fillViewport="true">
 
     <LinearLayout
@@ -52,26 +53,46 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             android:focusable="true"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            app:cardBackgroundColor="@color/bs_card"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:alpha="0.7" android:text="@string/bs_server_address" android:textSize="13sp" />
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center_vertical" android:orientation="horizontal">
                     <TextView android:id="@+id/tvFlag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textSize="22sp" />
                     <TextView android:id="@+id/tvAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:layoutDirection="ltr" android:maxLines="1" android:textAlignment="viewStart" android:textSize="16sp" android:textStyle="bold" />
                 </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFree"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/bs_choose_free"
+                    android:textColor="@color/banafsh_ink"
+                    app:backgroundTint="@color/banafsh_cyan"
+                    app:cornerRadius="26dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFree"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/bs_choose_free"
-            android:textColor="@color/banafsh_ink"
-            app:backgroundTint="@color/banafsh_cyan"
-            app:cornerRadius="28dp" />
+            app:cardBackgroundColor="@color/bs_card"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="18dp">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/bs_bypass_title" android:textSize="15sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:alpha="0.75" android:text="@string/bs_bypass_summary" android:textSize="13sp" />
+                </LinearLayout>
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swBypass"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:layout_width="wrap_content"

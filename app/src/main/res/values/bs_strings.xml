@@ -26,4 +26,7 @@
     <string name="bs_copy">Copy</string>
     <string name="bs_close">Close</string>
     <string name="bs_copied">Copied</string>
+    <string name="bs_bypass_title">Iranian apps bypass VPN</string>
+    <string name="bs_bypass_summary">Banks and Iranian apps connect directly</string>
+    <string name="bs_bypass_reconnect">The change applies from the next connection. Disconnect and connect once.</string>
 </resources>

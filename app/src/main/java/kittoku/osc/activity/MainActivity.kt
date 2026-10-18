@@ -42,6 +42,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import kittoku.osc.BuildConfig
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
+import kittoku.osc.IranApps
 import kittoku.osc.flagEmoji
 import kittoku.osc.extension.firstEditText
 import kittoku.osc.extension.sum
@@ -177,6 +178,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        IranApps.ensureSeeded(this, prefs)
+        IranApps.refreshIfDue(this, prefs)
 
         homeFragment = HomeFragment()
         settingFragment = SettingFragment()

@@ -2,6 +2,7 @@ package kittoku.osc.terminal
 
 import android.os.ParcelFileDescriptor
 import kittoku.osc.ControlMessage
+import kittoku.osc.IranApps
 import kittoku.osc.Result
 import kittoku.osc.SharedBridge
 import kittoku.osc.Where
@@ -18,7 +19,6 @@ import java.nio.ByteBuffer
 
 internal class IPTerminal(private val bridge: SharedBridge) {
     private var fd: ParcelFileDescriptor? = null
-
     private var inputStream: FileInputStream? = null
     private var outputStream: FileOutputStream? = null
 
@@ -77,6 +77,8 @@ internal class IPTerminal(private val bridge: SharedBridge) {
             addAppBasedRules()
         }
 
+        addIranianBypass()
+
         bridge.builder.setMtu(bridge.PPP_MTU)
         bridge.builder.setBlocking(true)
 
@@ -120,9 +122,30 @@ internal class IPTerminal(private val bridge: SharedBridge) {
         }
     }
 
+    // Iranian apps connect directly. Apps that are not installed are simply skipped.
+    private fun addIranianBypass() {
+        // Android does not allow mixing allowed and disallowed apps in one VPN.
+        if (doEnableAppBasedRule && isAllowedList) {
+            return
+        }
+
+        if (!bridge.prefs.getBoolean(IranApps.KEY_ENABLED, true)) {
+            return
+        }
+
+        bridge.prefs.getStringSet(IranApps.KEY_LIST, null)?.forEach {
+            try {
+                bridge.builder.addDisallowedApplication(it)
+            } catch (_: Exception) {
+                // not installed on this phone
+            }
+        }
+    }
+
     private suspend fun addCustomRoutes(): Boolean {
         getStringPrefValue(OscPrefKey.ROUTE_CUSTOM_ROUTES, bridge.prefs).split("\n").filter { it.isNotEmpty() }.forEach {
             val parsed = it.split("/")
+
             if (parsed.size != 2) {
                 bridge.controlMailbox.send(ControlMessage(Where.ROUTE, Result.ERR_PARSING_FAILED))
                 return false
@@ -130,6 +153,7 @@ internal class IPTerminal(private val bridge: SharedBridge) {
 
             val address = parsed[0]
             val prefix = parsed[1].toIntOrNull()
+
             if (prefix == null){
                 bridge.controlMailbox.send(ControlMessage(Where.ROUTE, Result.ERR_PARSING_FAILED))
                 return false
