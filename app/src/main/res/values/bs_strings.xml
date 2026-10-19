@@ -109,4 +109,11 @@
     <string name="bs_features_title">What\'s new and features</string>
     <string name="bs_whats_new_title">What\'s new in %1$s</string>
     <string name="bs_features_list">• A fresh, more attractive and easier look, with a big Connect/Disconnect button on the main screen\n\n• Free servers with automatic testing: every server is tested from your own internet. A green light means it works, red means it is unreachable. Working servers are sorted by ping; a lower ping usually means more speed and stability, so the server at the top is usually the best choice\n\n• Automatic reconnection (on by default): if the connection drops suddenly, for example in the middle of a call or when the network changes, the app reconnects by itself\n\n• Iranian apps, file-sharing apps (like Quick Share and ShareIt) and mail apps work directly without the VPN; their list updates automatically\n\n• Persian and English with a language option in Settings, plus light and dark themes\n\n• Simple Settings with a collapsible Advanced section for power users\n\n• Save, load, import and export profiles</string>
+    <string name="bs_status_connecting">Connecting…</string>
+    <string name="bs_status_getting_ip">Getting IP…</string>
+    <string name="bs_status_connected">Connected</string>
+    <string name="bs_status_connected_ip">Connected · IP: %1$s</string>
+    <string name="bs_status_reconnecting">Reconnecting…</string>
+    <string name="bs_channel_status">Connection status</string>
+    <string name="bs_whats_new_list">• The connection notification now shows the real status: Connecting, Getting IP, Connected, and the server IP\n\n• Tapping the notification opens the app\n\n• Fixed the package names of Bale and other Iranian messengers (Rubika, Soroush Plus, Gap), so they now work directly without the VPN\n\n• The Iranian apps list now updates itself every day and is filled in from a community-maintained list of Iranian apps</string>
 </resources>

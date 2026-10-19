@@ -11,8 +11,8 @@ internal object IranApps {
 
     private const val REMOTE_URL = "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/iran_apps.txt"
     // Raise this number whenever res/raw/iran_apps.txt gets new entries.
-    private const val SEED_VERSION = 2
-    private const val MONTH_MS = 30L * 24 * 60 * 60 * 1000
+    private const val SEED_VERSION = 3
+    private const val CHECK_INTERVAL_MS = 24L * 60 * 60 * 1000 // once a day
 
     fun parse(text: String): Set<String> {
         return text.lineSequence()
@@ -37,10 +37,10 @@ internal object IranApps {
         }
     }
 
-    // About once a month the list is refreshed from the repository.
+    // About once a day the list is refreshed from the repository.
     fun refreshIfDue(context: Context, prefs: SharedPreferences) {
         val ui = context.getSharedPreferences("banafsh_ui", Context.MODE_PRIVATE)
-        if (System.currentTimeMillis() - ui.getLong("iran_list_checked", 0L) < MONTH_MS) {
+        if (System.currentTimeMillis() - ui.getLong("iran_list_checked", 0L) < CHECK_INTERVAL_MS) {
             return
         }
 

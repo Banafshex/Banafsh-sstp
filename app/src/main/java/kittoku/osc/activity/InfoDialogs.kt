@@ -24,11 +24,11 @@ internal const val KEY_HIDE_WELCOME = "hide_welcome"
 internal const val KEY_LAST_SEEN_VERSION = "last_seen_version"
 
 internal fun showWelcomeDialog(activity: AppCompatActivity) {
-    showInfoDialog(activity, activity.getString(R.string.bs_welcome_title), withIntro = true, withCheckbox = true)
+    showInfoDialog(activity, activity.getString(R.string.bs_welcome_title), R.string.bs_features_list, withIntro = true, withCheckbox = true)
 }
 
 internal fun showAboutDialog(activity: AppCompatActivity) {
-    showInfoDialog(activity, activity.getString(R.string.bs_about_title), withIntro = true, withCheckbox = false)
+    showInfoDialog(activity, activity.getString(R.string.bs_about_title), R.string.bs_features_list, withIntro = true, withCheckbox = false)
 }
 
 /** Shown once after an update: only the list of what is new and what the app can do. */
@@ -36,12 +36,13 @@ internal fun showWhatsNewDialog(activity: AppCompatActivity) {
     showInfoDialog(
         activity,
         activity.getString(R.string.bs_whats_new_title, BuildConfig.VERSION_NAME),
+        R.string.bs_whats_new_list,
         withIntro = false,
         withCheckbox = false
     )
 }
 
-private fun showInfoDialog(activity: AppCompatActivity, title: String, withIntro: Boolean, withCheckbox: Boolean) {
+private fun showInfoDialog(activity: AppCompatActivity, title: String, listRes: Int, withIntro: Boolean, withCheckbox: Boolean) {
     val density = activity.resources.displayMetrics.density
     val dp = { value: Int -> (value * density).toInt() }
 
@@ -61,7 +62,7 @@ private fun showInfoDialog(activity: AppCompatActivity, title: String, withIntro
     }
 
     val features = TextView(activity).apply {
-        text = activity.getString(R.string.bs_features_list)
+        text = activity.getString(listRes)
         textSize = 15f
         textAlignment = View.TEXT_ALIGNMENT_VIEW_START
         setLineSpacing(0f, 1.2f)
