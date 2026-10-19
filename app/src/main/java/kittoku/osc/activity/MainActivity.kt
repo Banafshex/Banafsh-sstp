@@ -54,6 +54,7 @@ import kittoku.osc.preference.PROFILE_KEY_HEADER
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
+import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.custom.OscPreference
 import kittoku.osc.preference.deserializeProfile
 import kittoku.osc.preference.importProfile
@@ -67,6 +68,8 @@ import java.io.BufferedOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+
+private const val KEY_RECONNECT_DEFAULT_V1 = "reconnect_default_v1"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
@@ -153,8 +156,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (savedInstanceState == null && !uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
-            showWelcomeDialog(this)
+        // Reconnection is now on by default; switch it on once for installs that saved the old default.
+        if (!uiPrefs.getBoolean(KEY_RECONNECT_DEFAULT_V1, false)) {
+            setBooleanPrefValue(true, OscPrefKey.RECONNECTION_ENABLED, prefs)
+            uiPrefs.edit().putBoolean(KEY_RECONNECT_DEFAULT_V1, true).apply()
+        }
+
+        if (savedInstanceState == null) {
+            val lastSeen = uiPrefs.getString(KEY_LAST_SEEN_VERSION, null)
+
+            if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
+                showWelcomeDialog(this)
+            } else if (lastSeen != BuildConfig.VERSION_NAME) {
+                showWhatsNewDialog(this)
+            }
+
+            uiPrefs.edit().putString(KEY_LAST_SEEN_VERSION, BuildConfig.VERSION_NAME).apply()
         }
     }
 
