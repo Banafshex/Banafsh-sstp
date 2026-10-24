@@ -55,6 +55,7 @@ import kotlin.coroutines.resume
 internal const val ACTION_VPN_CONNECT = "kittoku.osc.connect"
 internal const val ACTION_VPN_DISCONNECT = "kittoku.osc.disconnect"
 internal const val ACTION_REFRESH_STATUS = "kittoku.osc.refresh_status"
+internal const val PREF_WAITING_NETWORK = "waiting_network"
 
 internal const val NOTIFICATION_ERROR_CHANNEL = "ERROR"
 internal const val NOTIFICATION_RECONNECT_CHANNEL = "RECONNECT"
@@ -185,6 +186,7 @@ internal class SstpVpnService : VpnService() {
     }
 
     private fun initializeClient() {
+        setWaitingNetwork(false)
         updateStatus(getString(R.string.bs_status_connecting))
 
         controller = Controller(SharedBridge(this)).also {
@@ -228,10 +230,12 @@ internal class SstpVpnService : VpnService() {
             try {
                 if (!hasUnderlyingNetwork()) {
                     // No internet at all: do not spend a reconnection attempt, just wait for a network.
+                    setWaitingNetwork(true)
                     updateStatus(getString(R.string.bs_status_waiting_network))
                     logWriter?.report("Waiting for a network")
 
                     awaitUnderlyingNetwork()
+                    setWaitingNetwork(false)
                     delay(3_000L)
                 } else {
                     getIntPrefValue(OscPrefKey.RECONNECTION_LIFE, prefs).also {
@@ -255,6 +259,10 @@ internal class SstpVpnService : VpnService() {
                 cancelNotification(NOTIFICATION_RECONNECT_ID)
             }
         }
+    }
+
+    private fun setWaitingNetwork(waiting: Boolean) {
+        prefs.edit().putBoolean(PREF_WAITING_NETWORK, waiting).apply()
     }
 
     @Suppress("DEPRECATION")
@@ -475,6 +483,7 @@ internal class SstpVpnService : VpnService() {
     internal fun close() {
         statusEnabled = false
         stopNetworkWatcher()
+        setWaitingNetwork(false)
         stopForeground(true)
         stopSelf()
     }

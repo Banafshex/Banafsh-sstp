@@ -27,6 +27,7 @@ import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
+import kittoku.osc.service.PREF_WAITING_NETWORK
 
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var prefs: SharedPreferences
@@ -77,7 +78,9 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
         val on = getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)
         val established = getStringPrefValue(OscPrefKey.HOME_STATUS, prefs).isNotEmpty()
+        val waiting = on && prefs.getBoolean(PREF_WAITING_NETWORK, false)
         val state = when {
+            waiting -> 1
             on && established -> 2
             on -> 1
             else -> 0
@@ -96,15 +99,15 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
         v.findViewById<TextView>(R.id.tvStatus).setText(
             when (state) {
+                1 -> if (waiting) R.string.bs_status_no_internet else R.string.bs_status_connecting
                 2 -> R.string.bs_status_connected
-                1 -> R.string.bs_status_connecting
                 else -> R.string.bs_status_disconnected
             }
         )
         v.findViewById<TextView>(R.id.tvHint).setText(
             when (state) {
+                1 -> if (waiting) R.string.bs_hint_no_internet else R.string.bs_hint_connecting
                 2 -> R.string.bs_hint_connected
-                1 -> R.string.bs_hint_connecting
                 else -> R.string.bs_hint_disconnected
             }
         )

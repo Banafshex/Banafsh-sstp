@@ -43,6 +43,7 @@ import kittoku.osc.BuildConfig
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
 import kittoku.osc.IranApps
+import kittoku.osc.SharedServer
 import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
 import kittoku.osc.extension.firstEditText
@@ -118,6 +119,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val scanLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data
+
+        if (result.resultCode != RESULT_OK || data == null) {
+            return@registerForActivityResult
+        }
+
+        val server = SharedServer(
+            host = data.getStringExtra(QrScanActivity.EXTRA_HOST).orEmpty(),
+            port = data.getIntExtra(QrScanActivity.EXTRA_PORT, 443),
+            user = data.getStringExtra(QrScanActivity.EXTRA_USER).orEmpty(),
+            pass = data.getStringExtra(QrScanActivity.EXTRA_PASS).orEmpty(),
+            countryCode = data.getStringExtra(QrScanActivity.EXTRA_COUNTRY).orEmpty(),
+            verify = data.getBooleanExtra(QrScanActivity.EXTRA_VERIFY, true)
+        )
+
+        if (server.host.isNotEmpty()) {
+            showReceivedServerConfirm(server)
+        }
+    }
+
     private fun updatePreferenceView() {
         // Home refreshes itself from the preferences; Settings reads them when it is opened.
     }
@@ -186,6 +208,10 @@ class MainActivity : AppCompatActivity() {
             R.id.open_settings -> startActivity(
                 Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
             )
+
+            R.id.send_server -> startActivity(Intent(this, QrSendActivity::class.java))
+
+            R.id.receive_server -> scanLauncher.launch(Intent(this, QrScanActivity::class.java))
 
             R.id.load_profile -> {
                 profileLauncher.launch(Intent(this, BlankActivity::class.java).putExtra(
@@ -307,6 +333,46 @@ class MainActivity : AppCompatActivity() {
             it.setNegativeButton(R.string.bs_cancel) { _, _ -> }
             it.show()
         }
+    }
+
+    // ---- Receive a server by QR --------------------------------------------
+
+    private fun showReceivedServerConfirm(server: SharedServer) {
+        val label = "${flagEmoji(server.countryCode)} ${server.host}:${server.port}".trim()
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.bs_qr_confirm_title)
+            .setMessage(getString(R.string.bs_qr_confirm_msg, label))
+            .setPositiveButton(R.string.bs_qr_confirm_save) { _, _ -> applyReceivedServer(server) }
+            .setNegativeButton(R.string.bs_cancel, null)
+            .show()
+    }
+
+    private fun applyReceivedServer(server: SharedServer) {
+        if (!applyServerSettings(server.host, server.port, server.user, server.pass, !server.verify)) {
+            Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        uiPrefs.edit()
+            .putString("server_host", server.host)
+            .putString("server_country", server.countryCode)
+            .apply()
+        updatePreferenceView()
+
+        AlertDialog.Builder(this)
+            .setMessage(R.string.bs_qr_connect_msg)
+            .setPositiveButton(R.string.bs_yes) { _, _ ->
+                if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+                    // Drop the current connection first so that the new server is really used.
+                    disconnectNow()
+                    window.decorView.postDelayed({ connectNow() }, 1800)
+                } else {
+                    connectNow()
+                }
+            }
+            .setNegativeButton(R.string.bs_no, null)
+            .show()
     }
 
     // ---- Get Free Config -------------------------------------------------
