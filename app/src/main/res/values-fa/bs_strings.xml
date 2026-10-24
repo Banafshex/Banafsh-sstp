@@ -112,6 +112,7 @@
     <string name="bs_status_getting_ip">در حال دریافت IP…</string>
     <string name="bs_status_connected_ip">وصل است · IP: %1$s</string>
     <string name="bs_status_reconnecting">در حال اتصال مجدد…</string>
+    <string name="bs_status_waiting_network">در انتظار اینترنت…</string>
     <string name="bs_channel_status">وضعیت اتصال</string>
     <string name="bs_whats_new_list">• نوتیفیکیشن اتصال حالا وضعیت واقعی را نشان می‌دهد: در حال اتصال، در حال دریافت IP، متصل شد و آی‌پی سرور\n\n• با لمس نوتیفیکیشن، برنامه باز می‌شود\n\n• اسم بسته‌ی بله و چند پیام‌رسان ایرانی دیگر (روبیکا، سروش پلاس و گپ) اصلاح شد تا بدون VPN و مستقیم کار کنند\n\n• لیست برنامه‌های ایرانی حالا هر روز خودکار به‌روز می‌شود و از یک لیست عمومی و نگهداری‌شده‌ی برنامه‌های ایرانی کامل می‌شود</string>
 </resources>

@@ -65,6 +65,8 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
     private var socket: Socket? = null
     internal val remoteAddress: String?
         get() = socket?.inetAddress?.hostAddress
+    internal val localAddress: String?
+        get() = socket?.localAddress?.hostAddress
     private lateinit var socketInputStream: InputStream
     private lateinit var socketOutputStream: OutputStream
     private lateinit var inboundBuffer: ByteBuffer

@@ -112,6 +112,7 @@
     <string name="bs_status_getting_ip">Getting IP…</string>
     <string name="bs_status_connected_ip">Connected · IP: %1$s</string>
     <string name="bs_status_reconnecting">Reconnecting…</string>
+    <string name="bs_status_waiting_network">Waiting for internet…</string>
     <string name="bs_channel_status">Connection status</string>
     <string name="bs_whats_new_list">• The connection notification now shows the real status: Connecting, Getting IP, Connected, and the server IP\n\n• Tapping the notification opens the app\n\n• Fixed the package names of Bale and other Iranian messengers (Rubika, Soroush Plus, Gap), so they now work directly without the VPN\n\n• The Iranian apps list now updates itself every day and is filled in from a community-maintained list of Iranian apps</string>
 </resources>

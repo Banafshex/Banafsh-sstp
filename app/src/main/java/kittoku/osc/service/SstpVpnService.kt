@@ -9,6 +9,11 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.VpnService
 import android.os.Build
 import android.service.quicksettings.TileService
@@ -39,13 +44,17 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.resume
 
 
 internal const val ACTION_VPN_CONNECT = "kittoku.osc.connect"
 internal const val ACTION_VPN_DISCONNECT = "kittoku.osc.disconnect"
+internal const val ACTION_REFRESH_STATUS = "kittoku.osc.refresh_status"
 
 internal const val NOTIFICATION_ERROR_CHANNEL = "ERROR"
 internal const val NOTIFICATION_RECONNECT_CHANNEL = "RECONNECT"
@@ -70,6 +79,11 @@ internal class SstpVpnService : VpnService() {
 
     private var jobReconnect: Job? = null
     @Volatile private var statusEnabled = false
+    @Volatile private var lastStatus = ""
+
+    private var networkWatcher: ConnectivityManager.NetworkCallback? = null
+    private val networkAddresses = ConcurrentHashMap<Network, Set<String>>()
+    @Volatile private var fastReconnect = false
 
     private fun setRootState(state: Boolean) {
         setBooleanPrefValue(state, OscPrefKey.ROOT_STATE, prefs)
@@ -105,22 +119,36 @@ internal class SstpVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return when (intent?.action) {
             ACTION_VPN_CONNECT -> {
-                controller?.kill(false, null)
-                statusEnabled = true
-
-                beForegrounded()
-                resetReconnectionLife(prefs)
-                if (getBooleanPrefValue(OscPrefKey.LOG_DO_SAVE_LOG, prefs)) {
-                    prepareLogWriter()
-                }
-
-                logWriter?.write("Establish VPN connection")
-
-                initializeClient()
-
-                setRootState(true)
+                startConnection()
 
                 START_STICKY
+            }
+
+            ACTION_REFRESH_STATUS -> {
+                // The user swiped the status notification away: show it again.
+                if (statusEnabled) {
+                    refreshStatusNotification()
+                    START_STICKY
+                } else {
+                    stopSelf()
+                    START_NOT_STICKY
+                }
+            }
+
+            null -> {
+                // The system restarted the service after killing the process.
+                // If the user had not disconnected, connect again instead of closing.
+                if (getBooleanPrefValue(OscPrefKey.ROOT_STATE, prefs) &&
+                    getBooleanPrefValue(OscPrefKey.RECONNECTION_ENABLED, prefs)
+                ) {
+                    startConnection()
+
+                    START_STICKY
+                } else {
+                    close()
+
+                    START_NOT_STICKY
+                }
             }
 
             else -> {
@@ -135,6 +163,25 @@ internal class SstpVpnService : VpnService() {
                 START_NOT_STICKY
             }
         }
+    }
+
+    private fun startConnection() {
+        jobReconnect?.cancel()
+        controller?.kill(false, null)
+        statusEnabled = true
+
+        beForegrounded()
+        resetReconnectionLife(prefs)
+        if (getBooleanPrefValue(OscPrefKey.LOG_DO_SAVE_LOG, prefs)) {
+            prepareLogWriter()
+        }
+
+        logWriter?.write("Establish VPN connection")
+
+        startNetworkWatcher()
+        initializeClient()
+
+        setRootState(true)
     }
 
     private fun initializeClient() {
@@ -179,16 +226,28 @@ internal class SstpVpnService : VpnService() {
     internal fun launchJobReconnect() {
         jobReconnect = scope.launch {
             try {
-                getIntPrefValue(OscPrefKey.RECONNECTION_LIFE, prefs).also {
-                    val life = it - 1
-                    setIntPrefValue(life, OscPrefKey.RECONNECTION_LIFE, prefs)
+                if (!hasUnderlyingNetwork()) {
+                    // No internet at all: do not spend a reconnection attempt, just wait for a network.
+                    updateStatus(getString(R.string.bs_status_waiting_network))
+                    logWriter?.report("Waiting for a network")
 
-                    val message = "Reconnection will be tried (LIFE = $life)"
-                    updateStatus(getString(R.string.bs_status_reconnecting))
-                    logWriter?.report(message)
+                    awaitUnderlyingNetwork()
+                    delay(3_000L)
+                } else {
+                    getIntPrefValue(OscPrefKey.RECONNECTION_LIFE, prefs).also {
+                        val life = it - 1
+                        setIntPrefValue(life, OscPrefKey.RECONNECTION_LIFE, prefs)
+
+                        val message = "Reconnection will be tried (LIFE = $life)"
+                        updateStatus(getString(R.string.bs_status_reconnecting))
+                        logWriter?.report(message)
+                    }
+
+                    val interval = if (fastReconnect) 1_000L else getIntPrefValue(OscPrefKey.RECONNECTION_INTERVAL, prefs) * 1000L
+                    fastReconnect = false
+
+                    delay(interval)
                 }
-
-                delay(getIntPrefValue(OscPrefKey.RECONNECTION_INTERVAL, prefs) * 1000L)
 
                 initializeClient()
             } catch (_: CancellationException) { }
@@ -196,6 +255,100 @@ internal class SstpVpnService : VpnService() {
                 cancelNotification(NOTIFICATION_RECONNECT_ID)
             }
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun hasUnderlyingNetwork(): Boolean {
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return true
+
+        return manager.allNetworks.any { network ->
+            val caps = manager.getNetworkCapabilities(network)
+
+            caps != null &&
+                    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    !caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+        }
+    }
+
+    private suspend fun awaitUnderlyingNetwork() {
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return
+        val request = underlyingNetworkRequest()
+        var callback: ConnectivityManager.NetworkCallback? = null
+
+        try {
+            suspendCancellableCoroutine<Unit> { continuation ->
+                callback = object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        if (continuation.isActive) continuation.resume(Unit)
+                    }
+                }
+
+                manager.registerNetworkCallback(request, callback!!)
+            }
+        } finally {
+            callback?.also {
+                try {
+                    manager.unregisterNetworkCallback(it)
+                } catch (_: IllegalArgumentException) { }
+            }
+        }
+    }
+
+    private fun underlyingNetworkRequest(): NetworkRequest {
+        return NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            .build()
+    }
+
+    private fun cleanAddress(address: String?): String? = address?.substringBefore('%')
+
+    /** If the network carrying the tunnel disappears, reconnect right away instead of waiting for the echo timeout. */
+    private fun startNetworkWatcher() {
+        if (networkWatcher != null) return
+
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return
+
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                networkAddresses[network] = linkProperties.linkAddresses
+                    .mapNotNull { cleanAddress(it.address.hostAddress) }
+                    .toSet()
+            }
+
+            override fun onLost(network: Network) {
+                val addresses = networkAddresses.remove(network)
+
+                if (!statusEnabled || jobReconnect?.isActive == true) return
+                if (!getBooleanPrefValue(OscPrefKey.RECONNECTION_ENABLED, prefs)) return
+
+                val current = controller ?: return
+                val local = cleanAddress(current.bridge.sslTerminal?.localAddress)
+
+                // Ignore the loss of a network that the tunnel is not using.
+                if (local != null && addresses != null && !addresses.contains(local)) return
+
+                logWriter?.report("Network lost; reconnecting")
+                fastReconnect = true
+                current.kill(true, null)
+            }
+        }
+
+        try {
+            manager.registerNetworkCallback(underlyingNetworkRequest(), callback)
+            networkWatcher = callback
+        } catch (_: Exception) { }
+    }
+
+    private fun stopNetworkWatcher() {
+        networkWatcher?.also {
+            try {
+                getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(it)
+            } catch (_: Exception) { }
+        }
+
+        networkWatcher = null
+        networkAddresses.clear()
     }
 
     private fun beForegrounded() {
@@ -237,6 +390,14 @@ internal class SstpVpnService : VpnService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // If the user swipes the notification away it is shown again.
+        val refreshIntent = PendingIntent.getService(
+            this,
+            2,
+            Intent(this, SstpVpnService::class.java).setAction(ACTION_REFRESH_STATUS),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // Tapping the notification opens the app.
         val openIntent = PendingIntent.getActivity(
             this,
@@ -257,14 +418,27 @@ internal class SstpVpnService : VpnService() {
             it.setContentTitle(getString(R.string.app_name))
             it.setContentText(status)
             it.setContentIntent(openIntent)
+            it.setDeleteIntent(refreshIntent)
             it.addAction(R.drawable.ic_baseline_close_24, getString(R.string.bs_disconnect), disconnectIntent)
         }.build()
     }
 
     /** Shows what the connection is doing (connecting, getting IP, connected...) in the permanent notification. */
     internal fun updateStatus(status: String) {
+        lastStatus = status
+
         // After the service is closed a late update must not bring the notification back.
         if (statusEnabled) {
+            tryNotify(buildStatusNotification(status), NOTIFICATION_DISCONNECT_ID)
+        }
+    }
+
+    private fun refreshStatusNotification() {
+        val status = lastStatus.ifEmpty { getString(R.string.bs_status_connecting) }
+
+        try {
+            startForeground(NOTIFICATION_DISCONNECT_ID, buildStatusNotification(status))
+        } catch (_: Exception) {
             tryNotify(buildStatusNotification(status), NOTIFICATION_DISCONNECT_ID)
         }
     }
@@ -300,6 +474,7 @@ internal class SstpVpnService : VpnService() {
 
     internal fun close() {
         statusEnabled = false
+        stopNetworkWatcher()
         stopForeground(true)
         stopSelf()
     }
@@ -311,6 +486,8 @@ internal class SstpVpnService : VpnService() {
 
         controller?.kill(false, null)
         controller = null
+
+        stopNetworkWatcher()
 
         scope.cancel()
 
