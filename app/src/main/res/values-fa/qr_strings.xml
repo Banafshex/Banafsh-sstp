@@ -23,4 +23,5 @@
     <string name="bs_qr_connect_msg">سرور ثبت شد. الان وصل می‌شوید؟</string>
     <string name="bs_status_no_internet">به اینترنت وصل نیستید</string>
     <string name="bs_hint_no_internet">به‌محض برقراری اینترنت، خودکار وصل می‌شود</string>
+    <string name="bs_connect_pick_server">ابتدا یک سرور انتخاب کنید</string>
 </resources>

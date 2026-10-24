@@ -212,6 +212,7 @@ internal class Controller(internal val bridge: SharedBridge) {
                     bridge.service.getString(R.string.bs_status_connected)
                 }
             )
+            bridge.service.clearErrorNotification()
 
 
             observer = NetworkObserver(bridge)

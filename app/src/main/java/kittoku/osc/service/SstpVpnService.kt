@@ -170,6 +170,7 @@ internal class SstpVpnService : VpnService() {
         jobReconnect?.cancel()
         controller?.kill(false, null)
         statusEnabled = true
+        clearErrorNotification()
 
         beForegrounded()
         resetReconnectionLife(prefs)
@@ -478,6 +479,11 @@ internal class SstpVpnService : VpnService() {
 
     internal fun cancelNotification(id: Int) {
         notificationManager.cancel(id)
+    }
+
+    /** An old error must not stay in the notification shade after a new attempt or a successful connection. */
+    internal fun clearErrorNotification() {
+        cancelNotification(NOTIFICATION_ERROR_ID)
     }
 
     internal fun close() {

@@ -495,6 +495,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     internal fun connectNow() {
+        if (getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs).isEmpty()) {
+            Toast.makeText(this, R.string.bs_connect_pick_server, Toast.LENGTH_LONG).show()
+            return
+        }
+
         val intent = VpnService.prepare(this)
 
         if (intent != null) {

@@ -23,4 +23,5 @@
     <string name="bs_qr_connect_msg">Server saved. Connect now?</string>
     <string name="bs_status_no_internet">No internet</string>
     <string name="bs_hint_no_internet">It will connect automatically as soon as the internet is back</string>
+    <string name="bs_connect_pick_server">Pick a server first</string>
 </resources>
