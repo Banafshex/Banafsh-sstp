@@ -1,0 +1,8 @@
+{
+  "id": "none",
+  "active": false,
+  "fa": { "title": "عنوان خبر", "text": "متن کوتاه خبر" },
+  "en": { "title": "News title", "text": "Short news text" },
+  "url": "",
+  "expires": ""
+}

@@ -209,6 +209,8 @@ class MainActivity : AppCompatActivity() {
                 Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
             )
 
+            R.id.check_update -> UpdateUi.checkNow(this, prefs)
+
             R.id.send_server -> startActivity(Intent(this, QrSendActivity::class.java))
 
             R.id.receive_server -> scanLauncher.launch(Intent(this, QrScanActivity::class.java))
