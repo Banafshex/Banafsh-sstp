@@ -328,7 +328,7 @@ internal class SstpVpnService : VpnService() {
                 // Ignore the loss of a network that the tunnel is not using.
                 if (local != null && addresses != null && !addresses.contains(local)) return
 
-                logWriter?.report("Network lost; reconnecting")
+                scope.launch { logWriter?.report("Network lost; reconnecting") }
                 fastReconnect = true
                 current.kill(true, null)
             }
