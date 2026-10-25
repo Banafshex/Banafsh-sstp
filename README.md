@@ -1,71 +1,80 @@
-# Open SSTP Client for Android <img src="https://github.com/kittoku/Open-SSTP-Client/raw/main/images/icon.png" height="40">
-This is an open-sourced Secure Socket Tunneling Protocol (MS-SSTP) client for Android, developed for accessing to 
-[VPN Azure Cloud](https://www.vpnazure.net/) (or [SoftEther VPN Server](https://www.softether.org/)). 
-So no test with other servers is done. Its behavior may be still unstable.
+<div align="center">
+
+# Banafsh-sstp
+
+**A simple, Persian-friendly Android app for connecting to free SSTP servers from VPN Gate.**
+
+English | [فارسی](README.fa.md)
+
+[![Telegram](https://img.shields.io/badge/Telegram-Banafsh__sstp-7352CC?logo=telegram&logoColor=white)](https://t.me/Banafsh_sstp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-7352CC.svg)](LICENSE)
+
+</div>
+
+<p align="center">
+  <img src="docs/screenshots/home-connected.png" width="22%" alt="Connected">
+  <img src="docs/screenshots/home-disconnected.png" width="22%" alt="Disconnected">
+  <img src="docs/screenshots/servers.png" width="22%" alt="Free servers">
+  <img src="docs/screenshots/settings.png" width="22%" alt="Settings">
+</p>
+
+## What is it?
+
+Banafsh-sstp is built for everyday users, not network experts. Pick a free server, tap **Connect**, and you are done. No accounts, no config files, no technical knowledge needed.
+
+It is a fork of [Open SSTP Client](https://github.com/kittoku/Open-SSTP-Client) by kittoku, redesigned with a friendlier interface and extra features.
+
+## Features
+
+- **One-tap connection**: a big Connect / Disconnect button on the home screen.
+- **Free servers list**: servers from VPN Gate, refreshed automatically, with a country flag for each one.
+- **Automatic server testing**: ping and bandwidth are shown for every server. Working servers appear first, unreachable ones are dimmed at the end.
+- **Iranian apps without VPN**: banks and Iranian apps connect directly, even while the VPN is on. The app list is kept up to date automatically.
+- **Auto reconnect**: the connection is restored when it drops.
+- **Share via QR code**: send your current server to a friend, who scans it inside the app. The QR is not readable by a regular camera app.
+- **In-app updates and news**: new versions are checked daily and can be installed from inside the app.
+- **Persian and English**: follows your system language by default; the layout direction adapts automatically.
+- **Status notification**: shows Connecting / Getting IP / Connected and your IP, with a Disconnect button.
+- **Advanced settings** for power users, hidden by default so beginners are not overwhelmed.
 
 ## Installation
-You can download and install the latest version via [Google Play](https://play.google.com/store/apps/details?id=kittoku.osc).
-Some of previous versions are released as apk file on [the releases page](https://github.com/kittoku/Open-SSTP-Client/releases).
 
-## Usage
-Enter `Host`, `Username` and `Password` preferences and turn the switch on. If a key icon gets to show on 
-the right side of the status bar, establishing a VPN connection has been succeeded. To disconnect 
-the connection, turn the switch off in the home tab or tap the notification. You can save/load the 
-profile from the upper-right option menu.  
-<br>
-<img src="images/example_home.png" width=20%>
-<img src="images/example_setting_1.png" width=20%>
-<img src="images/example_setting_2.png" width=20%>
-<img src="images/example_tile.png" width=20%>
+1. Open the [Releases](../../releases) page and download the latest `.apk` file.
+2. Open the file on your phone. If Android asks, allow installing from this source.
+3. If **Play Protect** shows a warning, tap **Install anyway**. This happens because the app is not published on Google Play.
 
+Requires Android 8.0 or newer.
 
-## Setting tab
-Some settings to be noted are written below:
+## How to use
 
-### Specify Trusted Certificates (SSL Layer)
-If you choose a certain directory, the client uses ONLY certificates in the directory, but the default 
-certificate store. I made this option for debugging.  
-  
-This preference is displayed as `Add Trusted Certificates` in v1.7.0 or older.
+1. Tap **Select free server** and choose one with a green indicator (fast and reachable).
+2. Tap **Connect**.
+3. Keep **Iranian apps without VPN** on if you want banks and Iranian apps to keep working directly.
 
-### PPP Network Protocol
-You can choose what network protocol PPP layer tries enabling. Remember, IPv6 option just gives the device 
-a link local address, never guarantees that you can communicate perfectly with IPv6 protocol.
+If a server does not connect, just pick another one. Free servers are run by volunteers and come and go.
 
-### Custom DNS Server Address
-You can specify DNS server to use in this option. Packets associated with this address is routed to 
-the VPN tunnel. If you specify a IPv4(v6) address and disable IPv4(v6) network,
-domain names possibly cannot be resolved.
+## Privacy and safety
 
-### Enable App-Based Rule
-With `Select Allowed/Disallowed Apps` option, you can specify the apps which can/cannot use the VPN tunnel.
-Even allowed apps cannot use the VPN tunnel if their routes are not on the routing table.
-So when you use this option, enabling `Add Default Route` option is recommended.
+The servers are run by volunteers around the world. Volunteer servers may keep connection logs for at least two weeks, and VPN Gate itself keeps connection logs for at least three months.
 
+- Do **not** use this service for sensitive logins such as banking.
+- Iranian banks will not open with a non-Iranian IP anyway.
+- Use it at your own responsibility.
 
-## Notice
-* `Host` preference can also contain IP address, but cannot include a port number. You can configure it in
-the setting tab.
+## Build from source
 
-* Your device needs to install a self-signed certificate and
- disable `Verify Hostname` option to access to a server using it
- 
-* A server must enable DHCP
- 
-* Only **PAP** and **MS-CHAPv2** authentication protocols can be enabled. No EAP. 
- 
-## Debugging
-It is almost impossible that I can debug a problem caused in any environments but my own. In a networking
-app, there are many possible reasons to cause the problem and I cannot identify the real one unless the 
-problem can be reproduced in my environment.
+Builds run on GitHub Actions:
 
-So it is strongly encouraged that you should debug by yourself. With `Select Cipher Suites` option, this client tries 
-to use `TLS_RSA_WITH_AES_128_CBC_SHA` or `TLS_RSA_WITH_AES_256_CBC_SHA` as a cipher suite so that you 
-can decrypt and investigate packets with software like WireShark. I think there can be a similar app for 
-Android. Don't forget the great software, Android Studio and its emulator (v^ー°)
+- Every push builds a debug APK, available under the **Actions** tab as an artifact.
+- The **Release APK** workflow builds a signed release. It needs three repository secrets holding your signing key (keystore, key alias and passwords).
 
-I don't have Windows Server OS. So I don't officially support accessing to it, but there is a
- successful case. See [this issue](https://github.com/kittoku/Open-SSTP-Client/issues/8#issuecomment-590241322).
+To build locally, open the project in Android Studio and run the `assembleDebug` Gradle task.
 
-## License
-Licensed under MIT. Be sure you use this software at your own risk. 
+## Credits and license
+
+- Original project: [Open SSTP Client](https://github.com/kittoku/Open-SSTP-Client) by **kittoku** (MIT).
+- Banafsh-sstp by **BANAFSHX**.
+- Free servers: [VPN Gate](https://www.vpngate.net/), University of Tsukuba, Japan.
+- Font: [Vazirmatn](https://github.com/rastikerdar/vazirmatn).
+
+Released under the [MIT License](LICENSE). Follow updates on Telegram: [@Banafsh_sstp](https://t.me/Banafsh_sstp)
