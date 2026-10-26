@@ -1,8 +1,11 @@
 package kittoku.osc.terminal
 
+import android.net.IpPrefix
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import kittoku.osc.ControlMessage
 import kittoku.osc.IranApps
+import kittoku.osc.IranRanges
 import kittoku.osc.Result
 import kittoku.osc.SharedBridge
 import kittoku.osc.Where
@@ -10,6 +13,7 @@ import kittoku.osc.extension.toHexByteArray
 import kittoku.osc.preference.LIST_TYPE_ALLOWED
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
+import kittoku.osc.preference.accessor.getSetPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -73,11 +77,7 @@ internal class IPTerminal(private val bridge: SharedBridge) {
             addCustomRoutes()
         }
 
-        if (doEnableAppBasedRule) {
-            addAppBasedRules()
-        }
-
-        addIranianBypass()
+        addAppBypass()
 
         bridge.builder.setMtu(bridge.PPP_MTU)
         bridge.builder.setBlocking(true)
@@ -92,7 +92,9 @@ internal class IPTerminal(private val bridge: SharedBridge) {
 
     private fun setIPv4BasedRouting() {
         if (doAddDefaultRoute) {
-            bridge.builder.addRoute("0.0.0.0", 0)
+            if (!addRoutesWithoutIranianRanges()) {
+                bridge.builder.addRoute("0.0.0.0", 0)
+            }
         }
 
         if (doRoutePrivateAddresses) {
@@ -122,23 +124,57 @@ internal class IPTerminal(private val bridge: SharedBridge) {
         }
     }
 
-    // Iranian apps connect directly. Apps that are not installed are simply skipped.
-    private fun addIranianBypass() {
-        // Android does not allow mixing allowed and disallowed apps in one VPN.
-        if (doEnableAppBasedRule && isAllowedList) {
-            return
-        }
-
+    // Iranian apps and the apps the user picked connect directly. Apps that are not installed are skipped.
+    private fun addAppBypass() {
         if (!bridge.prefs.getBoolean(IranApps.KEY_ENABLED, true)) {
             return
         }
 
-        bridge.prefs.getStringSet(IranApps.KEY_LIST, null)?.forEach {
+        val packages = HashSet<String>()
+        bridge.prefs.getStringSet(IranApps.KEY_LIST, null)?.let { packages.addAll(it) }
+        packages.addAll(getSetPrefValue(OscPrefKey.ROUTE_SELECTED_APPS, bridge.prefs))
+
+        packages.forEach {
             try {
                 bridge.builder.addDisallowedApplication(it)
             } catch (_: Exception) {
                 // not installed on this phone
             }
+        }
+    }
+
+    // Experimental: Iranian IPv4 ranges connect directly. Returns false if the normal default route should be used.
+    private fun addRoutesWithoutIranianRanges(): Boolean {
+        if (!bridge.prefs.getBoolean(IranRanges.KEY_ENABLED, false)) {
+            return false
+        }
+
+        val ranges = IranRanges.load(bridge.service)
+        if (ranges.isEmpty()) {
+            return false
+        }
+
+        return try {
+            if (Build.VERSION.SDK_INT >= 33) {
+                val excluded = IranRanges.toCidrs(ranges)
+                if (excluded.size > IranRanges.MAX_ROUTES) return false
+
+                bridge.builder.addRoute("0.0.0.0", 0)
+                excluded.forEach { (address, length) ->
+                    bridge.builder.excludeRoute(IpPrefix(InetAddress.getByName(IranRanges.format(address)), length))
+                }
+            } else {
+                val routes = IranRanges.complementCidrs(ranges)
+                if (routes.size > IranRanges.MAX_ROUTES) return false
+
+                routes.forEach { (address, length) ->
+                    bridge.builder.addRoute(IranRanges.format(address), length)
+                }
+            }
+
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

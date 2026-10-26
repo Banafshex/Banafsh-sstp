@@ -45,6 +45,11 @@
         <activity
             android:exported="false"
             android:theme="@style/Theme.OpenSSTPClient.NoActionBar"
+            android:name=".activity.BypassAppsActivity" />
+
+        <activity
+            android:exported="false"
+            android:theme="@style/Theme.OpenSSTPClient.NoActionBar"
             android:name=".activity.QrSendActivity" />
 
         <activity

@@ -25,9 +25,11 @@ import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.appcompat.app.AppCompatActivity
 import kittoku.osc.IranApps
+import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsItem
 import kittoku.osc.R
+import kittoku.osc.activity.BypassAppsActivity
 import kittoku.osc.activity.MainActivity
 import kittoku.osc.activity.UpdateUi
 import kittoku.osc.flagEmoji
@@ -86,6 +88,16 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 } catch (_: Exception) { }
+            }
+        }
+        view.findViewById<View>(R.id.btnManageApps).setOnClickListener {
+            startActivity(Intent(requireContext(), BypassAppsActivity::class.java))
+        }
+        view.findViewById<SwitchMaterial>(R.id.swSites).setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean(IranRanges.KEY_ENABLED, checked).apply()
+
+            if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+                Toast.makeText(requireContext(), R.string.bs_nv_sites_next, Toast.LENGTH_LONG).show()
             }
         }
         view.findViewById<SwitchMaterial>(R.id.swBypass).setOnCheckedChangeListener { _, checked ->
@@ -180,6 +192,13 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
         v.findViewById<SwitchMaterial>(R.id.swBypass).apply {
             val enabled = prefs.getBoolean(IranApps.KEY_ENABLED, true)
+            if (isChecked != enabled) {
+                isChecked = enabled
+            }
+        }
+
+        v.findViewById<SwitchMaterial>(R.id.swSites).apply {
+            val enabled = prefs.getBoolean(IranRanges.KEY_ENABLED, false)
             if (isChecked != enabled) {
                 isChecked = enabled
             }

@@ -40,9 +40,9 @@
         <kittoku.osc.preference.custom.ProxyPasswordPreference android:key="PROXY_PASSWORD"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/bs_set_routing">
-        <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE"/>
-        <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS"/>
+    <PreferenceCategory android:title="@string/bs_set_routing" app:isPreferenceVisible="false">
+        <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE" app:isPreferenceVisible="false"/>
+        <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS" app:isPreferenceVisible="false"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="ARASH-BANAFSHX">

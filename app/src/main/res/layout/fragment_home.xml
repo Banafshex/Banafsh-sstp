@@ -1,17 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bs_bg"
-    android:fillViewport="true">
+    android:background="@color/bs_bg">
 
-    <LinearLayout
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_home" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="20dp">
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardUpdate"
@@ -19,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/bs_card"
+            app:cardBackgroundColor="@color/bs_glass"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/banafsh_purple"
@@ -48,7 +59,7 @@
             android:clickable="true"
             android:focusable="true"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/bs_card"
+            app:cardBackgroundColor="@color/bs_glass"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/banafsh_cyan"
@@ -61,17 +72,6 @@
                 <TextView android:id="@+id/tvNewsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:lineSpacingMultiplier="1.2" android:textSize="14sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <View android:id="@+id/dot" android:layout_width="14dp" android:layout_height="14dp" android:background="@drawable/bg_dot" />
-            <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:textSize="20sp" android:textStyle="bold" />
-        </LinearLayout>
-
-        <TextView android:id="@+id/tvHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:alpha="0.75" android:gravity="center" android:textSize="14sp" />
 
         <FrameLayout android:layout_width="300dp" android:layout_height="300dp" android:layout_marginTop="12dp">
         <View android:id="@+id/ripple1" android:layout_width="176dp" android:layout_height="176dp" android:layout_gravity="center" android:alpha="0" android:background="@drawable/bg_ripple" android:visibility="invisible" />
@@ -95,62 +95,106 @@
             </LinearLayout>
         </FrameLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardServer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="@color/bs_card"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:alpha="0.7" android:text="@string/bs_server_address" android:textSize="13sp" />
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center_vertical" android:orientation="horizontal">
-                    <TextView android:id="@+id/tvFlag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textSize="22sp" />
-                    <TextView android:id="@+id/tvAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:layoutDirection="ltr" android:maxLines="1" android:textAlignment="viewStart" android:textSize="16sp" android:textStyle="bold" />
-                </LinearLayout>
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnFree"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/bs_choose_free"
-                    android:textColor="@color/banafsh_ink"
-                    app:backgroundTint="@color/banafsh_cyan"
-                    app:cornerRadius="26dp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardBackgroundColor="@color/bs_card"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="0dp">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="18dp">
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/bs_bypass_title" android:textSize="15sp" android:textStyle="bold" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:alpha="0.75" android:text="@string/bs_bypass_summary" android:textSize="13sp" />
-                </LinearLayout>
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swBypass"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <View android:id="@+id/dot" android:layout_width="14dp" android:layout_height="14dp" android:background="@drawable/bg_dot" />
+                <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:textSize="20sp" android:textStyle="bold" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:alpha="0.6"
-            android:gravity="center"
-            android:layoutDirection="ltr"
-            android:text="Banafsh-sstp · ARASH-BANAFSHX\nBased on Open SSTP Client by kittoku (MIT)"
-            android:textSize="12sp" />
-    </LinearLayout>
-</ScrollView>
+            <TextView android:id="@+id/tvHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:alpha="0.85" android:gravity="center" android:textSize="14sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardServer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/bs_glass"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/bs_glass_stroke"
+                app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:alpha="0.75" android:text="@string/bs_server_address" android:textSize="13sp" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:id="@+id/tvFlag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8dp" android:textSize="22sp" />
+                        <TextView android:id="@+id/tvAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:ellipsize="end" android:layoutDirection="ltr" android:maxLines="1" android:textAlignment="viewStart" android:textSize="16sp" android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFree"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/bs_choose_free"
+                android:textColor="@color/banafsh_ink"
+                app:backgroundTint="@color/banafsh_cyan"
+                app:cornerRadius="26dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/bs_glass"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/bs_glass_stroke"
+                app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/bs_nv_apps_title" android:textSize="15sp" android:textStyle="bold" />
+                        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/swBypass" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:alpha="0.85" android:text="@string/bs_nv_apps_summary" android:textSize="13sp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnManageApps"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/bs_nv_apps_manage"
+                        android:textColor="@color/banafsh_purple"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="@color/banafsh_purple" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/bs_glass"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/bs_glass_stroke"
+                app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/bs_nv_sites_title" android:textSize="15sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:text="@string/bs_nv_sites_tag" android:textColor="@color/banafsh_purple" android:textSize="12sp" android:textStyle="bold" />
+                        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/swSites" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:alpha="0.85" android:text="@string/bs_nv_sites_summary" android:textSize="13sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:alpha="0.7"
+                android:gravity="center"
+                android:layoutDirection="ltr"
+                android:text="Banafsh-sstp · ARASH-BANAFSHX\nBased on Open SSTP Client by kittoku (MIT)"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

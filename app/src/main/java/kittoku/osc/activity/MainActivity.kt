@@ -43,6 +43,7 @@ import kittoku.osc.BuildConfig
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
 import kittoku.osc.IranApps
+import kittoku.osc.IranRanges
 import kittoku.osc.SharedServer
 import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
@@ -50,12 +51,14 @@ import kittoku.osc.extension.firstEditText
 import kittoku.osc.extension.sum
 import kittoku.osc.fragment.HomeFragment
 import kittoku.osc.fragment.SettingFragment
+import kittoku.osc.preference.LIST_TYPE_DISALLOWED
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.PROFILE_KEY_HEADER
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
+import kittoku.osc.preference.accessor.setSetPrefValue
 import kittoku.osc.preference.custom.OscPreference
 import kittoku.osc.preference.deserializeProfile
 import kittoku.osc.preference.importProfile
@@ -149,12 +152,13 @@ class MainActivity : AppCompatActivity() {
         setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
         super.onCreate(savedInstanceState)
 
-        title = "${getString(R.string.app_name)}: ${BuildConfig.VERSION_NAME}"
+        title = getString(R.string.bs_title)
 
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
         WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
         ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
             val bars = insets.getInsets(
@@ -167,6 +171,19 @@ class MainActivity : AppCompatActivity() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         IranApps.ensureSeeded(this, prefs)
         IranApps.refreshIfDue(this, prefs)
+        IranRanges.ensureSeeded(this)
+        IranRanges.refreshIfDue(this)
+
+        // The old "only these apps use the VPN" mode is gone. Keep earlier picks only if they meant
+        // "these apps connect directly"; otherwise clear them so they do not change meaning.
+        if (!uiPrefs.getBoolean("apps_rule_migrated_v2", false)) {
+            val keep = getBooleanPrefValue(OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, prefs) &&
+                    getStringPrefValue(OscPrefKey.ROUTE_APP_LIST_TYPE, prefs) == LIST_TYPE_DISALLOWED
+
+            if (!keep) setSetPrefValue(emptySet(), OscPrefKey.ROUTE_SELECTED_APPS, prefs)
+            setBooleanPrefValue(false, OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, prefs)
+            uiPrefs.edit().putBoolean("apps_rule_migrated_v2", true).apply()
+        }
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction().replace(R.id.container, HomeFragment()).commit()
