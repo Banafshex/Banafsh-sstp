@@ -60,17 +60,18 @@ internal object NewsChecker {
         }
     }
 
+    /** Reads the news file (blocking: call it off the main thread). */
+    fun fetchBlocking(prefs: SharedPreferences, language: String): NewsResult {
+        val text = UpdateChecker.httpGet(PRIMARY_URL) ?: UpdateChecker.httpGet(FALLBACK_URL)
+            ?: return NewsResult(false, null)
+
+        prefs.edit().putString(KEY_CACHE, text).apply()
+        return NewsResult(true, parse(text, language))
+    }
+
     fun fetchAsync(prefs: SharedPreferences, language: String, onResult: (NewsResult) -> Unit) {
         executor.execute {
-            val text = UpdateChecker.httpGet(PRIMARY_URL) ?: UpdateChecker.httpGet(FALLBACK_URL)
-
-            val result = if (text == null) {
-                NewsResult(false, null)
-            } else {
-                prefs.edit().putString(KEY_CACHE, text).apply()
-                NewsResult(true, parse(text, language))
-            }
-
+            val result = fetchBlocking(prefs, language)
             main.post { onResult(result) }
         }
     }

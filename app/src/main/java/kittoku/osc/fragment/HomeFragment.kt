@@ -39,19 +39,8 @@ import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.service.PREF_WAITING_NETWORK
 
-private const val NEWS_INTERVAL = 5 * 60 * 1000L
-
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var prefs: SharedPreferences
-    private val handler = Handler(Looper.getMainLooper())
-    private var newsItem: NewsItem? = null
-
-    private val newsTicker = object : Runnable {
-        override fun run() {
-            checkNews()
-            handler.postDelayed(this, NEWS_INTERVAL)
-        }
-    }
     private val anims = mutableListOf<Animator>()
     private var lastState = -1
 
@@ -70,25 +59,6 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         view.findViewById<View>(R.id.btnFree).setOnClickListener {
             (activity as? MainActivity)?.showFreeConfig()
-        }
-        view.findViewById<View>(R.id.btnUpdate).setOnClickListener {
-            val info = UpdateUi.pendingCard(prefs) ?: return@setOnClickListener
-            (activity as? AppCompatActivity)?.let { host ->
-                UpdateUi.showUpdateDialog(host, prefs, info) { renderUpdateCard() }
-            }
-        }
-        view.findViewById<View>(R.id.btnNewsClose).setOnClickListener {
-            newsItem?.let { prefs.edit().putString(NewsChecker.KEY_DISMISSED, it.id).apply() }
-            renderNewsCard()
-        }
-        view.findViewById<View>(R.id.cardNews).setOnClickListener {
-            val url = newsItem?.url.orEmpty()
-
-            if (url.isNotEmpty()) {
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                } catch (_: Exception) { }
-            }
         }
         view.findViewById<View>(R.id.btnManageApps).setOnClickListener {
             startActivity(Intent(requireContext(), BypassAppsActivity::class.java))
@@ -114,65 +84,11 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
         lastState = -1
         refresh()
-
-        renderUpdateCard()
-        UpdateUi.checkIfDue(prefs) {
-            if (isAdded && view != null) renderUpdateCard()
-        }
-
-        // Show the last news instantly (even offline), then refresh it every few minutes while the app is open.
-        newsItem = NewsChecker.parse(prefs.getString(NewsChecker.KEY_CACHE, null), newsLanguage())
-        renderNewsCard()
-        handler.post(newsTicker)
-    }
-
-    private fun newsLanguage(): String {
-        return (activity as? AppCompatActivity)?.let { UpdateUi.language(it) } ?: "en"
-    }
-
-    private fun checkNews() {
-        NewsChecker.fetchAsync(prefs, newsLanguage()) { result ->
-            if (isAdded && view != null && result.ok) {
-                newsItem = result.item
-                renderNewsCard()
-            }
-        }
-    }
-
-    private fun renderUpdateCard() {
-        val v = view ?: return
-        val info = UpdateUi.pendingCard(prefs)
-
-        v.findViewById<View>(R.id.cardUpdate).visibility = if (info != null) View.VISIBLE else View.GONE
-
-        if (info != null) {
-            v.findViewById<TextView>(R.id.tvUpdateVersion).text = getString(R.string.bs_update_card_version, info.version)
-        }
-    }
-
-    private fun renderNewsCard() {
-        val v = view ?: return
-        val item = newsItem
-        val show = item != null && prefs.getString(NewsChecker.KEY_DISMISSED, "") != item.id
-
-        v.findViewById<View>(R.id.cardNews).visibility = if (show) View.VISIBLE else View.GONE
-
-        if (item != null && show) {
-            v.findViewById<TextView>(R.id.tvNewsTitle).apply {
-                text = item.title
-                visibility = if (item.title.isEmpty()) View.GONE else View.VISIBLE
-            }
-            v.findViewById<TextView>(R.id.tvNewsText).apply {
-                text = item.text
-                visibility = if (item.text.isEmpty()) View.GONE else View.VISIBLE
-            }
-        }
     }
 
     override fun onStop() {
         super.onStop()
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
-        handler.removeCallbacks(newsTicker)
         stopAnimations()
     }
 

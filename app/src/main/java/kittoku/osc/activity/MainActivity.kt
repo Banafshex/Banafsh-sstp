@@ -44,6 +44,8 @@ import kittoku.osc.R
 import kittoku.osc.databinding.ActivityMainBinding
 import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
+import kittoku.osc.NewsChecker
+import kittoku.osc.NewsNotifier
 import kittoku.osc.SharedServer
 import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
@@ -159,7 +161,10 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
+        // The picture runs under the status bar; its icons must stay readable in light and dark mode.
+        val isNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = !isNight
         ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
@@ -204,14 +209,35 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             val lastSeen = uiPrefs.getString(KEY_LAST_SEEN_VERSION, null)
 
+            var infoShown = true
+
             if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
                 showWelcomeDialog(this)
             } else if (lastSeen != BuildConfig.VERSION_NAME) {
                 showWhatsNewDialog(this)
+            } else {
+                infoShown = false
             }
 
             uiPrefs.edit().putString(KEY_LAST_SEEN_VERSION, BuildConfig.VERSION_NAME).apply()
+
+            // News and update pop-ups (also opened from their notifications).
+            if (!infoShown) {
+                Popups.showPending(this, prefs)
+            }
+
+            NewsChecker.fetchAsync(prefs, UpdateUi.language(this)) { Popups.showPending(this, prefs) }
+            UpdateUi.checkIfDue(prefs) { Popups.showPending(this, prefs) }
         }
+
+        NewsNotifier.ensureChannel(this)
+        NewsNotifier.schedule(this)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        Popups.showPending(this, prefs)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bs_dialog_bg">#EBFFFFFF</color>
+    <color name="bs_dialog_stroke">#666D28D9</color>
+    <color name="bs_dialog_text">#2A1D4A</color>
+    <color name="bs_dialog_muted">#54437F</color>
+    <color name="bs_dialog_link">#6D28D9</color>
+    <color name="bs_dialog_icon_bg">#1F7C3AED</color>
+    <color name="bs_title">#2A1D4A</color>
+
+    <style name="BsGlassDialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+
+    <style name="ThemeOverlay.BanafshHome" parent="ThemeOverlay.AppCompat">
+        <item name="colorControlNormal">@color/bs_title</item>
+        <item name="android:textColorPrimary">@color/bs_title</item>
+    </style>
+</resources>

@@ -69,35 +69,48 @@ internal object UpdateUi {
         runCheck(prefs) { _, _ -> onChanged() }
     }
 
-    private fun runCheck(prefs: SharedPreferences, onDone: (ReleaseInfo?, Boolean) -> Unit) {
-        executor.execute {
-            val result = UpdateChecker.fetchLatest()
-            var newer: ReleaseInfo? = null
+    // Blocking: asks GitHub and remembers the result. Returns (newer release or null, whether GitHub answered).
+    private fun doCheck(prefs: SharedPreferences): Pair<ReleaseInfo?, Boolean> {
+        val result = UpdateChecker.fetchLatest()
+        var newer: ReleaseInfo? = null
 
-            if (result.ok) {
-                val editor = prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                val info = result.info
+        if (result.ok) {
+            val editor = prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+            val info = result.info
 
-                if (info != null && UpdateChecker.isNewer(info.version, BuildConfig.VERSION_NAME)) {
-                    newer = info
-                    editor.putString(
-                        KEY_FOUND,
-                        JSONObject()
-                            .put("v", info.version)
-                            .put("n", info.notes)
-                            .put("u", info.apkUrl)
-                            .put("s", info.apkSize)
-                            .put("p", info.pageUrl)
-                            .toString()
-                    )
-                } else {
-                    editor.remove(KEY_FOUND)
-                }
-
-                editor.apply()
+            if (info != null && UpdateChecker.isNewer(info.version, BuildConfig.VERSION_NAME)) {
+                newer = info
+                editor.putString(
+                    KEY_FOUND,
+                    JSONObject()
+                        .put("v", info.version)
+                        .put("n", info.notes)
+                        .put("u", info.apkUrl)
+                        .put("s", info.apkSize)
+                        .put("p", info.pageUrl)
+                        .toString()
+                )
+            } else {
+                editor.remove(KEY_FOUND)
             }
 
-            main.post { onDone(newer, result.ok) }
+            editor.apply()
+        }
+
+        return newer to result.ok
+    }
+
+    /** For background work: checks about once a day (blocking). */
+    fun checkBlockingIfDue(prefs: SharedPreferences) {
+        if (System.currentTimeMillis() - prefs.getLong(KEY_LAST_CHECK, 0L) < DAY) return
+
+        doCheck(prefs)
+    }
+
+    private fun runCheck(prefs: SharedPreferences, onDone: (ReleaseInfo?, Boolean) -> Unit) {
+        executor.execute {
+            val (newer, ok) = doCheck(prefs)
+            main.post { onDone(newer, ok) }
         }
     }
 
@@ -116,18 +129,32 @@ internal object UpdateUi {
         }
     }
 
-    fun showUpdateDialog(activity: AppCompatActivity, prefs: SharedPreferences, info: ReleaseInfo, onLater: () -> Unit) {
-        val notes = UpdateChecker.pickNotes(info.notes, language(activity)).take(1200)
+    private fun cleanNotes(notes: String): String {
+        return notes.lines().joinToString("\n") {
+            var line = it.trim().replace(Regex("^#+\\s*"), "")
+            if (line.startsWith("- ")) line = "• " + line.substring(2)
+            line
+        }.replace(Regex("\n{3,}"), "\n\n").trim()
+    }
 
-        AlertDialog.Builder(activity)
-            .setTitle(activity.getString(R.string.bs_update_title, info.version))
-            .setMessage(notes.ifEmpty { activity.getString(R.string.bs_update_no_notes) })
-            .setPositiveButton(R.string.bs_update_now) { _, _ -> startDownload(activity, info) }
-            .setNegativeButton(R.string.bs_update_later) { _, _ ->
-                prefs.edit().putString(KEY_DISMISSED, info.version).apply()
-                onLater()
+    fun showUpdateDialog(activity: AppCompatActivity, prefs: SharedPreferences, info: ReleaseInfo, onLater: () -> Unit) {
+        val notes = cleanNotes(UpdateChecker.pickNotes(info.notes, language(activity)).take(1200))
+
+        GlassDialog.show(
+            activity,
+            R.drawable.ic_gd_update,
+            activity.getString(R.string.bs_update_title, info.version),
+            body = notes.ifEmpty { activity.getString(R.string.bs_update_no_notes) },
+            primaryText = activity.getString(R.string.bs_update_now),
+            onPrimary = { startDownload(activity, info) },
+            secondaryText = activity.getString(R.string.bs_update_later),
+            onClose = { byPrimary ->
+                if (!byPrimary) {
+                    prefs.edit().putString(KEY_DISMISSED, info.version).apply()
+                    onLater()
+                }
             }
-            .show()
+        )
     }
 
     private fun startDownload(activity: AppCompatActivity, info: ReleaseInfo) {
@@ -238,5 +265,54 @@ internal object UpdateUi {
             }
             .setNegativeButton(R.string.bs_cancel, null)
             .show()
+    }
+}
+
+
+/** The update and news pop-ups: they open from a notification or when the app starts. */
+internal object Popups {
+    private var showing = false
+
+    fun showPending(activity: AppCompatActivity, prefs: SharedPreferences) {
+        if (showing || activity.isFinishing || activity.isDestroyed) return
+
+        val update = UpdateUi.pendingCard(prefs)
+
+        if (update != null) {
+            showing = true
+            UpdateUi.showUpdateDialog(activity, prefs, update) {
+                showing = false
+                showPending(activity, prefs)
+            }
+            return
+        }
+
+        val news = kittoku.osc.NewsChecker.parse(
+            prefs.getString(kittoku.osc.NewsChecker.KEY_CACHE, null),
+            UpdateUi.language(activity)
+        ) ?: return
+
+        if (prefs.getString(kittoku.osc.NewsChecker.KEY_DISMISSED, "") == news.id) return
+
+        showing = true
+        val hasUrl = news.url.isNotEmpty()
+
+        GlassDialog.show(
+            activity,
+            R.drawable.ic_gd_bell,
+            news.title.ifEmpty { activity.getString(R.string.bs_title) },
+            body = news.text,
+            primaryText = if (hasUrl) activity.getString(R.string.bs_news_open) else null,
+            onPrimary = {
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(news.url)))
+                } catch (_: Exception) { }
+            },
+            secondaryText = activity.getString(R.string.bs_close),
+            onClose = {
+                showing = false
+                prefs.edit().putString(kittoku.osc.NewsChecker.KEY_DISMISSED, news.id).apply()
+            }
+        )
     }
 }

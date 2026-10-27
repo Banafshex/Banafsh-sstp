@@ -34,6 +34,7 @@ import kittoku.osc.preference.accessor.getURIPrefValue
 import kittoku.osc.preference.accessor.resetReconnectionLife
 import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setIntPrefValue
+import kittoku.osc.NewsNotifier
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +84,7 @@ internal class SstpVpnService : VpnService() {
     @Volatile private var lastStatus = ""
 
     private var networkWatcher: ConnectivityManager.NetworkCallback? = null
+    private var newsJob: Job? = null
     private val networkAddresses = ConcurrentHashMap<Network, Set<String>>()
     @Volatile private var fastReconnect = false
 
@@ -181,6 +183,7 @@ internal class SstpVpnService : VpnService() {
         logWriter?.write("Establish VPN connection")
 
         startNetworkWatcher()
+        startNewsLoop()
         initializeClient()
 
         setRootState(true)
@@ -347,6 +350,17 @@ internal class SstpVpnService : VpnService() {
             manager.registerNetworkCallback(underlyingNetworkRequest(), callback)
             networkWatcher = callback
         } catch (_: Exception) { }
+    }
+
+    // While the VPN is on, news and updates are checked every five minutes.
+    private fun startNewsLoop() {
+        newsJob?.cancel()
+        newsJob = scope.launch {
+            while (true) {
+                delay(5 * 60 * 1000L)
+                NewsNotifier.checkAndNotify(applicationContext)
+            }
+        }
     }
 
     private fun stopNetworkWatcher() {
