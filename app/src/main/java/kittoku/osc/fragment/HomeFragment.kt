@@ -37,6 +37,9 @@ import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
+import kittoku.osc.preference.accessor.setBooleanPrefValue
+import kittoku.osc.preference.accessor.setStringPrefValue
+import kittoku.osc.service.SstpVpnService
 import kittoku.osc.service.PREF_WAITING_NETWORK
 
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -82,6 +85,12 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onStart() {
         super.onStart()
         prefs.registerOnSharedPreferenceChangeListener(listener)
+        // If the app was killed while connected, the saved "connected" state is stale: clear it.
+        if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs) && !SstpVpnService.isRunning) {
+            setBooleanPrefValue(false, OscPrefKey.HOME_CONNECTOR, prefs)
+            setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
+        }
+
         lastState = -1
         refresh()
     }

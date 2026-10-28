@@ -100,7 +100,14 @@ internal class SstpVpnService : VpnService() {
         }
     }
 
+    companion object {
+        // False after the process was killed, so the screen can tell a stale "connected" state.
+        @Volatile
+        internal var isRunning = false
+    }
+
     override fun onCreate() {
+        isRunning = true
         notificationManager = NotificationManagerCompat.from(this)
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -509,6 +516,7 @@ internal class SstpVpnService : VpnService() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         logWriter?.write("Terminate VPN connection")
         logWriter?.close()
         logWriter = null

@@ -12,6 +12,7 @@
     <PreferenceCategory android:title="@string/bs_set_appearance">
         <ListPreference
             android:key="THEME_MODE"
+            app:isPreferenceVisible="false"
             android:title="@string/bs_set_theme"
             android:entries="@array/bs_theme_entries"
             android:entryValues="@array/bs_theme_values"

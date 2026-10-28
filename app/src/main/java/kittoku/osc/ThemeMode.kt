@@ -3,13 +3,9 @@ package kittoku.osc
 import androidx.appcompat.app.AppCompatDelegate
 
 internal object ThemeMode {
+    // Only the dark look exists now, whatever value an older version saved.
+    @Suppress("UNUSED_PARAMETER")
     fun apply(value: String?) {
-        AppCompatDelegate.setDefaultNightMode(
-            when (value) {
-                "light" -> AppCompatDelegate.MODE_NIGHT_NO
-                "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-            }
-        )
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
     }
 }
