@@ -20,5 +20,5 @@
     <string name="bs_notify_update_title">A new version is ready</string>
     <string name="bs_notify_update_text">Banafsh %1$s is ready to install</string>
     <string name="bs_features_title_short">Features</string>
-    <string name="bs_credits" translatable="false">Banafsh-sstp · ARASH-BANAFSHX\nBased on Open SSTP Client by kittoku (MIT)</string>
+    <string name="bs_credits" translatable="false">Banafsh-sstp · BANAFSHX\nBased on Open SSTP Client by kittoku (MIT)</string>
 </resources>

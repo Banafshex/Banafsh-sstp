@@ -45,7 +45,7 @@
         <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS" app:isPreferenceVisible="false"/>
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="ARASH-BANAFSHX">
+    <PreferenceCategory android:title="BANAFSHX">
         <Preference
             android:key="ABOUT_BANAFSH"
             android:persistent="false"

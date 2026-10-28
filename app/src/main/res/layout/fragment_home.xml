@@ -39,7 +39,7 @@
 
 
 
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-26dp" android:gravity="center_vertical" android:orientation="horizontal">
                 <View android:id="@+id/dot" android:layout_width="12dp" android:layout_height="12dp" android:background="@drawable/bg_dot" />
                 <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:textSize="19sp" android:textStyle="bold" />
             </LinearLayout>
@@ -86,7 +86,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="0dp"
                     android:layout_marginEnd="5dp"
@@ -95,19 +95,18 @@
                     app:cardElevation="0dp"
                     app:strokeColor="@color/bs_glass_stroke"
                     app:strokeWidth="1dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/bs_nv_apps_title" android:textSize="14sp" android:textStyle="bold" />
                             <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/swBypass" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                         </LinearLayout>
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:alpha="0.85" android:text="@string/bs_nv_apps_summary" android:textSize="12sp" />
-                        <View android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnManageApps"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="40dp"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="10dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:text="@string/bs_nv_apps_manage"
@@ -120,7 +119,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginStart="5dp"
                     android:layout_marginEnd="0dp"
@@ -129,7 +128,7 @@
                     app:cardElevation="0dp"
                     app:strokeColor="@color/bs_glass_stroke"
                     app:strokeWidth="1dp">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/bs_nv_sites_title" android:textSize="14sp" android:textStyle="bold" />
                             <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/swSites" android:layout_width="wrap_content" android:layout_height="wrap_content" />

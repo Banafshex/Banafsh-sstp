@@ -28,6 +28,20 @@
 
     <style name="Theme.OpenSSTPClient.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="Theme.OpenSSTPClient.PopupOverlay" parent="ThemeOverlay.AppCompat.DayNight" />
+    <style name="Theme.OpenSSTPClient.PopupOverlay" parent="ThemeOverlay.AppCompat.DayNight">
+        <item name="popupMenuStyle">@style/BsPopupMenu</item>
+        <item name="textAppearanceLargePopupMenu">@style/BsPopupMenuText</item>
+        <item name="textAppearanceSmallPopupMenu">@style/BsPopupMenuText</item>
+    </style>
+
+    <style name="BsPopupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">8dp</item>
+    </style>
+
+    <style name="BsPopupMenuText" parent="TextAppearance.AppCompat.Widget.PopupMenu.Large">
+        <item name="android:textColor">@color/bs_dialog_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
 
 </resources>

@@ -19,4 +19,5 @@
         <item name="colorControlNormal">@color/bs_title</item>
         <item name="android:textColorPrimary">@color/bs_title</item>
     </style>
+    <color name="bs_popup_bg">#F5FFFFFF</color>
 </resources>

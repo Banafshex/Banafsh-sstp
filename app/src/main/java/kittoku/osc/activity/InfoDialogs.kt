@@ -34,10 +34,13 @@ internal fun showAboutDialog(activity: AppCompatActivity) {
 
 /** Shown once after an update: what is new first, then the description of the app. */
 internal fun showWhatsNewDialog(activity: AppCompatActivity) {
-    showInfoDialog(activity, activity.getString(R.string.bs_whats_new_title, BuildConfig.VERSION_NAME), Kind.WHATS_NEW)
+    showInfoDialog(activity, activity.getString(R.string.bs_whats_new_title, ltr(BuildConfig.VERSION_NAME)), Kind.WHATS_NEW)
 }
 
 private enum class Kind { WELCOME, ABOUT, WHATS_NEW }
+
+// Keeps a version number like 1.2.0 in the right order inside Persian text.
+private fun ltr(text: String) = "\u2066$text\u2069"
 
 private fun showInfoDialog(activity: AppCompatActivity, title: String, kind: Kind) {
     val density = activity.resources.displayMetrics.density
@@ -79,13 +82,12 @@ private fun showInfoDialog(activity: AppCompatActivity, title: String, kind: Kin
     }
 
     if (kind != Kind.ABOUT) {
-        if (kind == Kind.WELCOME) addHeading(activity.getString(R.string.bs_whats_new_title, BuildConfig.VERSION_NAME))
+        if (kind == Kind.WELCOME) addHeading(activity.getString(R.string.bs_whats_new_title, ltr(BuildConfig.VERSION_NAME)))
         addBody(activity.getString(R.string.bs_whats_new_list))
         container.addView(
             View(activity).apply { setBackgroundColor(linkColor); alpha = 0.3f },
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply { topMargin = dp(16) }
+            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)).apply { topMargin = dp(16); bottomMargin = dp(14) }
         )
-        container.addView(View(activity), LinearLayout.LayoutParams(1, dp(2)))
     }
 
     addBody(activity.getString(R.string.bs_welcome_message), links = true)
