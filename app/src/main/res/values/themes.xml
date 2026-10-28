@@ -30,8 +30,15 @@
 
     <style name="Theme.OpenSSTPClient.PopupOverlay" parent="ThemeOverlay.AppCompat.DayNight">
         <item name="popupMenuStyle">@style/BsPopupMenu</item>
+        <item name="actionOverflowMenuStyle">@style/BsOverflowMenu</item>
         <item name="textAppearanceLargePopupMenu">@style/BsPopupMenuText</item>
         <item name="textAppearanceSmallPopupMenu">@style/BsPopupMenuText</item>
+    </style>
+
+    <!-- The three-dot (overflow) menu reads this one, not popupMenuStyle. -->
+    <style name="BsOverflowMenu" parent="Widget.AppCompat.Light.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="overlapAnchor">false</item>
     </style>
 
     <style name="BsPopupMenu" parent="Widget.AppCompat.PopupMenu">
