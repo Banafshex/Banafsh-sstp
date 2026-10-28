@@ -11,12 +11,10 @@
         <item>dark</item>
     </string-array>
     <string-array name="bs_lang_entries">
-        <item>System default</item>
         <item>English</item>
         <item>فارسی</item>
     </string-array>
     <string-array name="bs_lang_values">
-        <item>system</item>
         <item>en</item>
         <item>fa</item>
     </string-array>

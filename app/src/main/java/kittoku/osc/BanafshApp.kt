@@ -16,12 +16,8 @@ class BanafshApp : Application() {
         // Persian is the default language until the user picks another one.
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
-        if (!prefs.getBoolean("language_default_set", false)) {
-            if (AppCompatDelegate.getApplicationLocales().isEmpty) {
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("fa"))
-            }
-
-            prefs.edit().putBoolean("language_default_set", true).apply()
-        }
+        // The saved choice is applied at every start, so it does not depend on the phone's language.
+        val language = if (prefs.getString("app_language", "fa") == "en") "en" else "fa"
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
     }
 }

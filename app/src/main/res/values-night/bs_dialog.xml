@@ -8,4 +8,5 @@
     <color name="bs_dialog_icon_bg">#4D7C3AED</color>
     <color name="bs_title">#F3EEFC</color>
     <color name="bs_popup_bg">#F01C1038</color>
+    <color name="bs_bg_scrim">#99070312</color>
 </resources>

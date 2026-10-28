@@ -80,13 +80,12 @@ internal class SettingFragment : PreferenceFragmentCompat() {
 
     private fun setLanguageListener() {
         val pref = findPreference<ListPreference>("LANGUAGE") ?: return
-        val current = AppCompatDelegate.getApplicationLocales()
-
-        // "system" means no override: the phone's language decides (Persian, otherwise English).
-        pref.value = if (current.isEmpty) "system" else current[0]?.language ?: "system"
+        val saved = preferenceManager.sharedPreferences?.getString("app_language", "fa") ?: "fa"
+        pref.value = if (saved == "en") "en" else "fa"
 
         pref.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-            val tag = (newValue as? String).orEmpty().let { if (it == "system") "" else it }
+            val tag = if ((newValue as? String) == "en") "en" else "fa"
+            preferenceManager.sharedPreferences?.edit()?.putString("app_language", tag)?.apply()
             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
 
             true

@@ -20,4 +20,5 @@
         <item name="android:textColorPrimary">@color/bs_title</item>
     </style>
     <color name="bs_popup_bg">#F5FFFFFF</color>
+    <color name="bs_bg_scrim">#99070312</color>
 </resources>
