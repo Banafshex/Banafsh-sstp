@@ -77,17 +77,17 @@
                 app:backgroundTint="@color/banafsh_cyan"
                 app:cornerRadius="24dp" />
 
-            <LinearLayout
+            <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
+                android:columnCount="2">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
                     android:layout_marginStart="0dp"
                     android:layout_marginEnd="5dp"
                     app:cardBackgroundColor="@color/bs_glass"
@@ -120,7 +120,8 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
                     android:layout_marginStart="5dp"
                     android:layout_marginEnd="0dp"
                     app:cardBackgroundColor="@color/bs_glass"
@@ -137,6 +138,6 @@
                         <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:alpha="0.85" android:text="@string/bs_nv_sites_summary" android:textSize="12sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+            </GridLayout>
     </LinearLayout>
 </ScrollView>
