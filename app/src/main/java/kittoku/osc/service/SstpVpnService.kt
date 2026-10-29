@@ -71,6 +71,10 @@ internal const val NOTIFICATION_CERTIFICATE_ID = 4
 
 
 internal class SstpVpnService : VpnService() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     private lateinit var prefs: SharedPreferences
     private lateinit var listener: SharedPreferences.OnSharedPreferenceChangeListener
     private lateinit var notificationManager: NotificationManagerCompat

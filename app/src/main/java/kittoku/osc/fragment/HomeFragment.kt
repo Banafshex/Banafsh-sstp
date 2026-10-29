@@ -13,9 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
-import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -31,6 +29,7 @@ import kittoku.osc.NewsItem
 import kittoku.osc.R
 import kittoku.osc.activity.BypassAppsActivity
 import kittoku.osc.activity.MainActivity
+import kittoku.osc.activity.NetworkView
 import kittoku.osc.activity.UpdateUi
 import kittoku.osc.flagEmoji
 import kittoku.osc.preference.OscPrefKey
@@ -51,8 +50,11 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         view?.post { refresh() }
     }
 
+    private fun network(): NetworkView? = activity?.findViewById(R.id.networkView)
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        network()?.anchor = view.findViewById(R.id.btnConnect)
 
         view.findViewById<View>(R.id.btnConnect).setOnClickListener {
             (activity as? MainActivity)?.toggleConnection()
@@ -92,12 +94,14 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         lastState = -1
+        network()?.setActive(true)
         refresh()
     }
 
     override fun onStop() {
         super.onStop()
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        network()?.setActive(false)
         stopAnimations()
     }
 
@@ -159,10 +163,18 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
                 else -> R.string.bs_connect
             }
         )
-        btn.setBackgroundResource(if (state == 0) R.drawable.bg_connect_idle else R.drawable.bg_connect_active)
-        val fg = if (state == 0) 0xFFFFFFFF.toInt() else purple
-        label.setTextColor(fg)
-        icon.setColorFilter(fg, PorterDuff.Mode.SRC_IN)
+        btn.setBackgroundResource(
+            when (state) {
+                2 -> R.drawable.bg_connect_active
+                1 -> R.drawable.bg_connect_connecting
+                else -> R.drawable.bg_connect_idle
+            }
+        )
+        v.findViewById<View>(R.id.ring).setBackgroundResource(
+            if (state == 0) R.drawable.bg_ring else R.drawable.bg_ring_live
+        )
+        label.setTextColor(0xFFF4F3FF.toInt())
+        icon.setColorFilter(if (state == 0) 0xFFC9B6FF.toInt() else cyan, PorterDuff.Mode.SRC_IN)
         btn.contentDescription = label.text
 
         val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
@@ -183,82 +195,39 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             lastState = state
             stopAnimations()
             if (state == 1) startConnecting()
-            if (state == 2 && previous == 1) playPop()
+            network()?.setMode(
+                when (state) {
+                    1 -> NetworkView.Mode.CONNECTING
+                    2 -> NetworkView.Mode.CONNECTED
+                    else -> NetworkView.Mode.IDLE
+                },
+                celebrate = state == 2 && previous == 1
+            )
         }
     }
 
+    // While connecting, the outer ring breathes; the lines and sparks live in NetworkView.
     private fun startConnecting() {
-        val v = view ?: return
-        val ring = v.findViewById<View>(R.id.ring)
-        ring.visibility = View.VISIBLE
-        ObjectAnimator.ofFloat(ring, View.ROTATION, 0f, 360f).apply {
-            duration = 1100
-            interpolator = LinearInterpolator()
+        val ring = view?.findViewById<View>(R.id.ring) ?: return
+        ObjectAnimator.ofPropertyValuesHolder(
+            ring,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.065f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.065f)
+        ).apply {
+            duration = 850
             repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
             start()
             anims.add(this)
-        }
-        listOf(R.id.ripple1, R.id.ripple2, R.id.ripple3).forEachIndexed { i, id ->
-            val r = v.findViewById<View>(id)
-            r.visibility = View.VISIBLE
-            ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 2400
-                startDelay = i * 800L
-                interpolator = DecelerateInterpolator()
-                repeatCount = ValueAnimator.INFINITE
-                addUpdateListener { a ->
-                    val f = a.animatedValue as Float
-                    r.scaleX = 0.7f + 1.05f * f
-                    r.scaleY = r.scaleX
-                    r.alpha = 0.9f * (1f - f)
-                }
-                start()
-                anims.add(this)
-            }
         }
     }
 
     private fun stopAnimations() {
         anims.forEach { it.cancel() }
         anims.clear()
-        val v = view ?: return
-        v.findViewById<View>(R.id.ring).visibility = View.INVISIBLE
-        listOf(R.id.ripple1, R.id.ripple2, R.id.ripple3).forEach {
-            v.findViewById<View>(it).apply {
-                alpha = 0f
-                visibility = View.INVISIBLE
-            }
-        }
-    }
-
-    private fun playPop() {
-        val v = view ?: return
-        val btn = v.findViewById<View>(R.id.btnConnect)
-        ObjectAnimator.ofPropertyValuesHolder(
-            btn,
-            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.14f, 1f),
-            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.14f, 1f)
-        ).apply {
-            duration = 650
-            interpolator = OvershootInterpolator()
-            start()
-        }
-
-        val burst = v.findViewById<View>(R.id.burst)
-        burst.visibility = View.VISIBLE
-        ObjectAnimator.ofPropertyValuesHolder(
-            burst,
-            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.8f),
-            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.8f),
-            PropertyValuesHolder.ofFloat(View.ALPHA, 0.9f, 0f)
-        ).apply {
-            duration = 800
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    burst.visibility = View.INVISIBLE
-                }
-            })
-            start()
+        view?.findViewById<View>(R.id.ring)?.apply {
+            scaleX = 1f
+            scaleY = 1f
         }
     }
 }

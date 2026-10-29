@@ -21,6 +21,10 @@ internal const val EXTRA_KEY_CERT = "CERT"
 internal const val EXTRA_KEY_FILENAME = "FILENAME"
 
 class BlankActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

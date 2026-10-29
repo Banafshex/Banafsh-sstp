@@ -54,6 +54,10 @@ private val IP_REGEX = Regex("""^\d{1,3}(\.\d{1,3}){3}$""")
 
 /** The "free servers" page: downloads the list, tests every server from the user's own network, lets the user connect. */
 class ServerListActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     companion object {
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"

@@ -23,6 +23,10 @@ import kittoku.osc.preference.accessor.getStringPrefValue
 
 /** Shows the current server as a scrambled QR code that the Banafsh app on another phone can read. */
 class QrSendActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_qr_send)

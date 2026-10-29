@@ -31,6 +31,10 @@ import kittoku.osc.R
 
 /** Explains why the camera is needed, then scans the QR code of a server sent by another Banafsh app. */
 class QrScanActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     companion object {
         const val EXTRA_HOST = "qr_host"
         const val EXTRA_PORT = "qr_port"

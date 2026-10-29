@@ -32,6 +32,10 @@ import java.util.concurrent.Executors
 
 /** Apps that connect directly (without the VPN): the Iranian ones are fixed, the others are chosen here. */
 class BypassAppsActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     private class AppItem(val pkg: String, val label: String)
 
     private sealed class Row {

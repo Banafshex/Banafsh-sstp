@@ -78,6 +78,10 @@ import java.util.Locale
 private const val KEY_RECONNECT_DEFAULT_V1 = "reconnect_default_v1"
 
 class MainActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
+    }
+
     private lateinit var prefs: SharedPreferences
 
     private val uiPrefs: SharedPreferences by lazy {
