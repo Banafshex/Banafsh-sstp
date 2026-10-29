@@ -50,11 +50,14 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         view?.post { refresh() }
     }
 
+    private var shortcuts: ShortcutsCard? = null
+
     private fun network(): NetworkView? = activity?.findViewById(R.id.networkView)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         network()?.anchor = view.findViewById(R.id.btnConnect)
+        shortcuts = ShortcutsCard(this, view)
 
         view.findViewById<View>(R.id.btnConnect).setOnClickListener {
             (activity as? MainActivity)?.toggleConnection()
@@ -95,6 +98,7 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
         lastState = -1
         network()?.setActive(true)
+        shortcuts?.refresh()
         refresh()
     }
 
@@ -206,28 +210,37 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    // While connecting, the outer ring breathes; the lines and sparks live in NetworkView.
+    // While connecting, two thin waves leave the button and fade out before they reach the outer ring.
     private fun startConnecting() {
-        val ring = view?.findViewById<View>(R.id.ring) ?: return
-        ObjectAnimator.ofPropertyValuesHolder(
-            ring,
-            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.065f),
-            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.065f)
-        ).apply {
-            duration = 850
-            repeatCount = ValueAnimator.INFINITE
-            repeatMode = ValueAnimator.REVERSE
-            start()
-            anims.add(this)
+        val v = view ?: return
+        listOf(R.id.wave1 to 0L, R.id.wave2 to 900L).forEach { (id, delay) ->
+            val wave = v.findViewById<View>(id)
+            wave.alpha = 0f
+            ObjectAnimator.ofPropertyValuesHolder(
+                wave,
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.36f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.36f),
+                PropertyValuesHolder.ofFloat(View.ALPHA, 0.6f, 0f)
+            ).apply {
+                duration = 1800
+                startDelay = delay
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = LinearInterpolator()
+                start()
+                anims.add(this)
+            }
         }
     }
 
     private fun stopAnimations() {
         anims.forEach { it.cancel() }
         anims.clear()
-        view?.findViewById<View>(R.id.ring)?.apply {
-            scaleX = 1f
-            scaleY = 1f
+        listOf(R.id.wave1, R.id.wave2).forEach { id ->
+            view?.findViewById<View>(id)?.apply {
+                scaleX = 1f
+                scaleY = 1f
+                alpha = 0f
+            }
         }
     }
 }

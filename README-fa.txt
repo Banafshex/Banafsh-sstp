@@ -3,3 +3,4 @@
    app/src/main/res/drawable/bg_home.webp
    app/src/main/res/drawable/bg_ripple.xml
    app/src/main/res/drawable/bg_burst.xml
+۳) update_servers.py: سرورهای زیر ۱۷۰ مگابیت دیگه وارد servers.json نمی‌شن.

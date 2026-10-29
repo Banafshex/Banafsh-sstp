@@ -9,6 +9,7 @@ API_URLS = [
 ]
 DDNS_SUFFIX = ".opengw.net"
 TOP_N = 20
+MIN_SPEED_MBPS = 170  # servers slower than this never go into servers.json
 OUTPUT_FILE = "servers.json"
 
 
@@ -85,6 +86,10 @@ def parse_servers(csv_text):
             speed = 0.0
         sessions = int(row[7]) if row[7].isdigit() else 999
 
+        speed_mbps = round(speed / 1_000_000, 2)
+        if speed_mbps < MIN_SPEED_MBPS:
+            continue  # too slow to be useful
+
         servers.append({
             "host_name": host_name,
             "host": host_name + DDNS_SUFFIX,
@@ -92,7 +97,7 @@ def parse_servers(csv_text):
             "port": port,
             "country": row[6].strip(),
             "country_name": row[5].strip(),
-            "speed_mbps": round(speed / 1_000_000, 2),
+            "speed_mbps": speed_mbps,
             "ping": ping,
             "sessions": sessions,
             "score": score,
@@ -102,7 +107,7 @@ def parse_servers(csv_text):
         key=lambda s: (s["score"], s["speed_mbps"], -s["sessions"], -s["ping"]),
         reverse=True,
     )
-    print(f"Rows parsed: {rows_total}, with a TCP port: {len(servers)}")
+    print(f"Rows parsed: {rows_total}, usable (TCP port and speed >= {MIN_SPEED_MBPS} Mbps): {len(servers)}")
     return servers[:TOP_N]
 
 
