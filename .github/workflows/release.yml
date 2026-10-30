@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version name, e.g. 1.0.0-beta.1"
+        description: "Version name, e.g. 1.2.0 (stable) or 1.2.0-beta.1 (pre-release)"
         required: true
-        default: "1.0.0-beta.1"
+        default: "1.2.0"
 
 permissions:
   contents: write
@@ -51,17 +51,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION_NAME: ${{ inputs.version }}
-          NOTES: |
-            Banafsh-sstp ${{ inputs.version }}
-
-            نسخه‌ی آزمایشی (Beta).
-            هنگام نصب، Google Play Protect هشدار می‌دهد؛ گزینه‌ی Install anyway را بزنید.
         run: |
+          NOTES_FILE="release_notes/${VERSION_NAME}.md"
+          {
+            if [ -f "$NOTES_FILE" ]; then
+              cat "$NOTES_FILE"
+            else
+              echo "Banafsh-sstp ${VERSION_NAME}"
+            fi
+            printf '\n\n---\n'
+            echo "هنگام نصب، Google Play Protect ممکن است هشدار بدهد؛ گزینه‌ی Install anyway را بزنید."
+            echo "Google Play Protect may show a warning on install; tap Install anyway."
+          } > release_body.md
+
           FLAGS=""
           case "$VERSION_NAME" in
-            *beta*) FLAGS="--prerelease" ;;
+            *-*) FLAGS="--prerelease" ;;
           esac
+
           gh release create "v${VERSION_NAME}" "Banafsh-sstp-${VERSION_NAME}.apk" \
             --title "Banafsh-sstp ${VERSION_NAME}" \
-            --notes "$NOTES" \
+            --notes-file release_body.md \
             $FLAGS
