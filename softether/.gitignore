@@ -1,0 +1,5 @@
+/build
+/.cxx
+# Headers are fetched by fetch-openssl-headers.sh (CI does it automatically)
+/src/main/cpp/openssl/
+/src/main/cpp/openssl-build/

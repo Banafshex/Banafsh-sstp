@@ -1,6 +1,7 @@
 package kittoku.osc.activity
 
 import android.Manifest
+import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -19,6 +20,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -46,6 +48,8 @@ import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsNotifier
+import kittoku.osc.Protocol
+import kittoku.osc.ProtocolSwitch
 import kittoku.osc.SharedServer
 import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
@@ -535,6 +539,51 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // ---- Protocol dialog -------------------------------------------------
+
+    internal fun showProtocolDialog() {
+        val current = ProtocolSwitch.get(this)
+        val density = resources.displayMetrics.density
+        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        var dialog: Dialog? = null
+
+        Protocol.values().forEach { protocol ->
+            val row = layoutInflater.inflate(R.layout.item_protocol, container, false)
+            val card = row as com.google.android.material.card.MaterialCardView
+            val selected = protocol == current
+
+            row.findViewById<TextView>(R.id.tvProtoName).setText(protocol.nameRes)
+            row.findViewById<TextView>(R.id.tvProtoDesc).setText(protocol.descRes)
+            row.findViewById<ImageView>(R.id.ivProtoCheck).visibility = if (selected) View.VISIBLE else View.INVISIBLE
+
+            card.strokeColor = ContextCompat.getColor(this, if (selected) R.color.bs_dialog_link else R.color.bs_dialog_stroke)
+            card.strokeWidth = ((if (selected) 2 else 1) * density).toInt()
+
+            row.setOnClickListener {
+                dialog?.dismiss()
+
+                if (protocol != current) {
+                    ProtocolSwitch.set(this, protocol)
+
+                    // A running tunnel keeps its protocol; the new one starts with the next connection.
+                    if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+                        Toast.makeText(this, R.string.bs_protocol_next, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+
+            container.addView(row)
+        }
+
+        dialog = GlassDialog.show(
+            this,
+            R.drawable.ic_gd_protocol,
+            getString(R.string.bs_protocol_title),
+            content = container,
+            secondaryText = getString(R.string.bs_cancel)
+        )
+    }
+
     // ---- Connect / disconnect ---------------------------------------------
 
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -558,15 +607,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // The chosen protocol (SSTP or SoftEther) decides which tunnel is started.
     private fun startVpnService() {
-        ContextCompat.startForegroundService(
-            this,
-            Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
-        )
+        ProtocolSwitch.connect(this)
     }
 
     internal fun disconnectNow() {
-        startService(Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_DISCONNECT))
+        ProtocolSwitch.disconnect(this)
     }
 
     internal fun toggleConnection() {

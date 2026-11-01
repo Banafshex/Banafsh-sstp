@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="softether_connecting">در حال اتصال SoftEther…</string>
+    <string name="softether_tls_handshake">برقراری ارتباط امن TLS…</string>
+    <string name="softether_protocol_handshake">توافق پروتکل SoftEther…</string>
+    <string name="softether_authenticating">در حال احراز هویت…</string>
+    <string name="softether_session_setup">برقراری نشست…</string>
+    <string name="softether_connected">SoftEther وصل شد، آی‌پی: %1$s</string>
+    <string name="softether_disconnecting">در حال قطع اتصال SoftEther…</string>
+    <string name="softether_disconnected">SoftEther قطع شد</string>
+    <string name="softether_disconnected_by_error">SoftEther به‌خاطر خطا قطع شد</string>
+
+    <string name="softether_vpn_service">SoftEther VPN</string>
+    <string name="softether_vpn_connection_status">وضعیت اتصال SoftEther</string>
+    <string name="softether_disconnect">قطع اتصال</string>
+
+    <string name="softether_notification_title">SoftEther VPN - %1$s</string>
+    <string name="softether_notification_title_notconnect">SoftEther VPN</string>
+    <string name="softether_channel_name_error">خطای SoftEther VPN</string>
+    <string name="softether_channel_description_error">اعلان خطاهای SoftEther VPN</string>
+    <string name="softether_notification_disconnected_error">اتصال SoftEther به‌خاطر خطا قطع شد</string>
+    <string name="softether_statusline_bytecount">↓%1$s %2$s - ↑%3$s %4$s</string>
+</resources>

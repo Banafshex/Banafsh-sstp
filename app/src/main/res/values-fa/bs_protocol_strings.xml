@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_choose_server">انتخاب سرور</string>
+    <string name="bs_choose_protocol">انتخاب پروتکل</string>
+    <string name="bs_protocol_title">پروتکل اتصال</string>
+    <string name="bs_protocol_sstp_desc">رمزنگاری TLS روی پورت HTTPS؛ پیش‌فرض برنامه</string>
+    <string name="bs_protocol_softether_desc">پروتکل بومی SoftEther؛ نسخه‌ی آزمایشی</string>
+    <string name="bs_protocol_next">پروتکل جدید در اتصال بعدی اعمال می‌شود</string>
+    <string name="bs_server_address_protocol">آدرس سرور · %1$s</string>
+</resources>

@@ -26,6 +26,8 @@ import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsItem
+import kittoku.osc.ProtocolSwitch
+import kittoku.osc.SoftEtherBridge
 import kittoku.osc.R
 import kittoku.osc.activity.BypassAppsActivity
 import kittoku.osc.activity.MainActivity
@@ -43,6 +45,7 @@ import kittoku.osc.service.PREF_WAITING_NETWORK
 
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var prefs: SharedPreferences
+    private lateinit var uiPrefs: SharedPreferences
     private val anims = mutableListOf<Animator>()
     private var lastState = -1
 
@@ -56,6 +59,7 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        uiPrefs = requireContext().getSharedPreferences("banafsh_ui", android.content.Context.MODE_PRIVATE)
         network()?.anchor = view.findViewById(R.id.btnConnect)
         shortcuts = ShortcutsCard(this, view)
 
@@ -67,6 +71,9 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
         view.findViewById<View>(R.id.btnFree).setOnClickListener {
             (activity as? MainActivity)?.showFreeConfig()
+        }
+        view.findViewById<View>(R.id.btnProtocol).setOnClickListener {
+            (activity as? MainActivity)?.showProtocolDialog()
         }
         view.findViewById<View>(R.id.btnManageApps).setOnClickListener {
             startActivity(Intent(requireContext(), BypassAppsActivity::class.java))
@@ -90,10 +97,12 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onStart() {
         super.onStart()
         prefs.registerOnSharedPreferenceChangeListener(listener)
+        uiPrefs.registerOnSharedPreferenceChangeListener(listener)
         // If the app was killed while connected, the saved "connected" state is stale: clear it.
-        if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs) && !SstpVpnService.isRunning) {
+        if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs) && !ProtocolSwitch.isAnyRunning()) {
             setBooleanPrefValue(false, OscPrefKey.HOME_CONNECTOR, prefs)
             setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
+            SoftEtherBridge.clearActive(requireContext())
         }
 
         lastState = -1
@@ -105,6 +114,7 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onStop() {
         super.onStop()
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        uiPrefs.unregisterOnSharedPreferenceChangeListener(listener)
         network()?.setActive(false)
         stopAnimations()
     }
@@ -191,6 +201,8 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             text = flag
             visibility = if (flag.isEmpty()) View.GONE else View.VISIBLE
         }
+        v.findViewById<TextView>(R.id.tvServerLabel).text =
+            getString(R.string.bs_server_address_protocol, getString(ProtocolSwitch.get(ctx).nameRes))
         v.findViewById<TextView>(R.id.tvAddress).text =
             if (host.isEmpty()) getString(R.string.bs_no_server) else "$host:$port"
 

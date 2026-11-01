@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_protocol_sstp" translatable="false">SSTP</string>
+    <string name="bs_protocol_softether" translatable="false">SoftEther</string>
+
+    <string name="bs_choose_server">Choose server</string>
+    <string name="bs_choose_protocol">Choose protocol</string>
+    <string name="bs_protocol_title">Connection protocol</string>
+    <string name="bs_protocol_sstp_desc">TLS encryption on the HTTPS port; the app default</string>
+    <string name="bs_protocol_softether_desc">SoftEther\'s own protocol; experimental</string>
+    <string name="bs_protocol_next">The new protocol is used the next time you connect</string>
+    <string name="bs_server_address_protocol">Server Address · %1$s</string>
+</resources>
