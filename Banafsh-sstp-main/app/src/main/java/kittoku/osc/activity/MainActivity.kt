@@ -158,10 +158,6 @@ class MainActivity : AppCompatActivity() {
         setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
         super.onCreate(savedInstanceState)
 
-        if (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK ==
-            android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
-            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        }
 
         title = getString(R.string.bs_title)
 
