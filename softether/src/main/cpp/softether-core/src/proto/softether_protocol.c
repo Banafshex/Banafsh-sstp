@@ -682,7 +682,7 @@ static uint8_t* build_login_pack(const char* hub_name, const char* username,
     pack_add_int(&p, "client_build", client_build);
     pack_add_int(&p, "client_id", 0);
     pack_add_int(&p, "protocol", rudp ? 1 : 0);   // 0 = TCP, 1 = UDP
-    pack_add_int(&p, "max_connection", 4);  // Request 4 connections for multi-connection throughput
+    pack_add_int(&p, "max_connection", 1);  // Banafsh: one TCP connection. With 4, the extra-connection thread stalled the data path (0 bytes received)
     pack_add_int(&p, "use_encrypt", 1);
     // Phase 13B: advertise no session compression. VPN Gate traffic is
     // TLS-encrypted and incompressible; zlib per block only burns CPU.
@@ -997,7 +997,7 @@ softether_connection_t* softether_create(void) {
 
     // Initialize multi-connection fields
     conn->num_additional = 0;
-    conn->max_connection = 4;  // Target: request 4 connections in login PACK
+    conn->max_connection = 1;  // Banafsh: single connection, additional connections are never opened
     conn->half_connection = 0;
     conn->primary_direction = TCP_DIRECTION_BOTH;
     conn->next_connect_time = 0;
