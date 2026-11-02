@@ -21,6 +21,7 @@ import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.getURIPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setStringPrefValue
+import vn.unlimit.softether.SoftEtherTrafficSnapshot
 import vn.unlimit.softether.SoftEtherVpnService
 import vn.unlimit.softether.model.AuthMethod
 import vn.unlimit.softether.model.ConnectionConfig
@@ -61,7 +62,7 @@ private class LogSink(private val writer: LogWriter) {
  * (ROOT_STATE, HOME_CONNECTOR, HOME_STATUS) and repeats the connection after a drop,
  * using the reconnection settings of the app.
  */
-internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
+internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVpnService.TrafficListener {
     private const val UI_PREFS = "banafsh_ui"
     private const val KEY_ACTIVE = "softether_active"
 
@@ -88,6 +89,9 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     private var logSink: LogSink? = null
     private var dumpThread: Thread? = null
     private var sessionStamp: String? = null
+    @Volatile private var lastTrafficLogAt = 0L
+
+    private val midDumpTask = Runnable { dumpLogcat("10 s after connect") }
 
     private val retryTask = Runnable {
         retryPending = false
@@ -109,6 +113,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
             }
 
             SoftEtherVpnService.addStateListener(this)
+            SoftEtherVpnService.addTrafficListener(this)
         }
     }
 
@@ -139,8 +144,8 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     }
 
     // An app can read its own logcat lines without any permission.
-    private fun readOwnLogcat(since: String?, max: Int = 300): List<String> = try {
-        val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "2000", "-v", "time"))
+    private fun readOwnLogcat(since: String?): List<String> = try {
+        val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "6000", "-v", "time"))
         val lines = process.inputStream.bufferedReader().useLines { sequence ->
             sequence.filter { line ->
                 // "MM-dd HH:mm:ss.SSS ..." sorts as text, so older attempts are skipped
@@ -149,16 +154,36 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
             }.toList()
         }
         process.destroy()
-        lines.takeLast(max)
+        pickLines(lines)
     } catch (e: Exception) {
         listOf("logcat is not readable: ${e.message}")
     }
 
-    private fun dumpLogcat(title: String) {
+    // Long sessions: keep the start (DHCP, tunnel setup), every warning/error, and the end.
+    private fun pickLines(lines: List<String>): List<String> {
+        if (lines.size <= 450) return lines
+
+        val head = lines.take(250)
+        val tail = lines.takeLast(120)
+        val middle = lines.subList(250, lines.size - 120)
+            .filter { it.contains(" W/") || it.contains(" E/") }
+            .take(120)
+
+        return head + "... ${lines.size - 370} lines skipped, warnings and errors kept ..." + middle + tail
+    }
+
+    private fun dumpLogcat(title: String, delayMs: Long = 0L) {
         val sink = logSink ?: return
         val since = sessionStamp
 
         val thread = Thread {
+            if (delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs)
+                } catch (_: InterruptedException) {
+                }
+            }
+
             sink.write("--- $title: engine log (logcat) ---")
             readOwnLogcat(since).forEach { sink.write(it) }
             sink.write("--- end ---")
@@ -269,6 +294,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
         if (tunnelIsUp()) {
             // The state report that follows clears the saved state.
+            dumpLogcat("Session end", 1500L)
             sendDisconnect(app)
         } else {
             finish(app, prefs)
@@ -322,6 +348,16 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
     // ---- state reports from the module ------------------------------------------------------
 
+    // Packets leaving and arriving through the tunnel: tells whether the server answers at all.
+    override fun onSoftEtherTrafficUpdated(snapshot: SoftEtherTrafficSnapshot) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastTrafficLogAt < 5000L) return
+        lastTrafficLogAt = now
+
+        if (logSink == null) return
+        log("Traffic: sent ${snapshot.outBytes} B / ${snapshot.packetsOut} pkts, received ${snapshot.inBytes} B / ${snapshot.packetsIn} pkts")
+    }
+
     override fun onSoftEtherStateChanged(state: String, assignedIp: String) {
         val app = appContext ?: return
 
@@ -346,6 +382,8 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
             SoftEtherVpnService.STATE_CONNECTED -> {
                 sawProgress = true
+                handler.removeCallbacks(midDumpTask)
+                handler.postDelayed(midDumpTask, 10_000L)
                 retriesLeft = if (getBooleanPrefValue(OscPrefKey.RECONNECTION_ENABLED, prefs)) {
                     getIntPrefValue(OscPrefKey.RECONNECTION_COUNT, prefs)
                 } else 0
@@ -404,6 +442,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         closeLog()
 
         handler.removeCallbacks(retryTask)
+        handler.removeCallbacks(midDumpTask)
         retryPending = false
         userStopped = true
 
