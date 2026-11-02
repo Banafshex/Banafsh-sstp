@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="bs_protocol_sstp" translatable="false">SSTP</string>
-    <string name="bs_protocol_softether" translatable="false">SoftEther</string>
+    <string name="bs_protocol_softether_tcp" translatable="false">SoftEther TCP</string>
+    <string name="bs_protocol_softether_udp" translatable="false">SoftEther UDP</string>
 
     <string name="bs_choose_server">Choose server</string>
     <string name="bs_choose_protocol">Choose protocol</string>
     <string name="bs_protocol_title">Connection protocol</string>
     <string name="bs_protocol_sstp_desc">TLS encryption on the HTTPS port; the app default</string>
-    <string name="bs_protocol_softether_desc">SoftEther\'s own protocol; experimental</string>
+    <string name="bs_protocol_softether_tcp_desc">SoftEther\'s own protocol; all data over TCP</string>
+    <string name="bs_protocol_softether_udp_desc">Faster, but may not respond on some networks</string>
     <string name="bs_protocol_next">The new protocol is used the next time you connect</string>
     <string name="bs_server_address_protocol">Server Address · %1$s</string>
     <string name="bs_softether_native_failed">The SoftEther engine could not be loaded</string>

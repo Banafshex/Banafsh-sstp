@@ -13,10 +13,17 @@ import kittoku.osc.service.SstpVpnService
 /** The two ways the app can build a tunnel. The choice lives in the "banafsh_ui" preferences. */
 internal enum class Protocol(val id: String, val nameRes: Int, val descRes: Int) {
     SSTP("sstp", R.string.bs_protocol_sstp, R.string.bs_protocol_sstp_desc),
-    SOFTETHER("softether", R.string.bs_protocol_softether, R.string.bs_protocol_softether_desc);
+    SOFTETHER_TCP("softether_tcp", R.string.bs_protocol_softether_tcp, R.string.bs_protocol_softether_tcp_desc),
+    SOFTETHER_UDP("softether_udp", R.string.bs_protocol_softether_udp, R.string.bs_protocol_softether_udp_desc);
+
+    val isSoftEther: Boolean get() = this != SSTP
 
     companion object {
-        fun fromId(id: String?): Protocol = values().firstOrNull { it.id == id } ?: SSTP
+        // "softether" is what the first version saved: it was the TCP mode.
+        fun fromId(id: String?): Protocol = when (id) {
+            "softether" -> SOFTETHER_TCP
+            else -> values().firstOrNull { it.id == id } ?: SSTP
+        }
     }
 }
 
@@ -43,18 +50,12 @@ internal object ProtocolSwitch {
         val protocol = get(app)
 
         // The other protocol may still hold the tunnel (for example a server was picked while it was on).
-        val otherRunning = when (protocol) {
-            Protocol.SSTP -> SoftEtherBridge.isRunning()
-            Protocol.SOFTETHER -> SstpVpnService.isRunning
-        }
+        val otherRunning = if (protocol.isSoftEther) SstpVpnService.isRunning else SoftEtherBridge.isRunning()
 
         handler.removeCallbacksAndMessages(null)
 
         if (otherRunning) {
-            when (protocol) {
-                Protocol.SSTP -> SoftEtherBridge.disconnect(app)
-                Protocol.SOFTETHER -> stopSstp(app)
-            }
+            if (protocol.isSoftEther) stopSstp(app) else SoftEtherBridge.disconnect(app)
             handler.postDelayed({ start(app, protocol) }, SWITCH_DELAY_MS)
         } else {
             start(app, protocol)
@@ -78,13 +79,13 @@ internal object ProtocolSwitch {
     }
 
     private fun start(app: Context, protocol: Protocol) {
-        when (protocol) {
-            Protocol.SSTP -> ContextCompat.startForegroundService(
+        if (protocol.isSoftEther) {
+            SoftEtherBridge.connect(app)
+        } else {
+            ContextCompat.startForegroundService(
                 app,
                 Intent(app, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
             )
-
-            Protocol.SOFTETHER -> SoftEtherBridge.connect(app)
         }
     }
 

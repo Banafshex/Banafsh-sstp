@@ -86,6 +86,9 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
     private var retriesLeft = 0
     private var attempt = 0
 
+    // Fixed when the user taps connect, so a retry after a drop keeps the same mode.
+    private var udpMode = false
+
     private var logSink: LogSink? = null
     private var dumpThread: Thread? = null
     private var sessionStamp: String? = null
@@ -262,10 +265,11 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
         setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
 
         attempt = 0
+        udpMode = ProtocolSwitch.get(app) == Protocol.SOFTETHER_UDP
         sessionStamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         closeLog()
         logSink = openSink(app, prefs, "")
-        log("SoftEther connect requested")
+        log("SoftEther connect requested, mode: " + if (udpMode) "UDP acceleration" else "TCP")
         log("Device: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ABIs ${Build.SUPPORTED_ABIS.joinToString()}, ${Build.MANUFACTURER} ${Build.MODEL}")
 
         if (tunnelIsUp()) {
@@ -323,7 +327,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
 
             log(
                 "Attempt $attempt: ${config.serverHost}:${config.serverPort}, user=${config.username}, hub=${config.virtualHub}, " +
-                    "tcp=${config.useTcp}, udp=${config.useUdp}, routes=${config.routes.size}, " +
+                    "tcpOnly=${config.useTcp}, udp=${config.useUdp}, mtu=${config.mtu}, routes=${config.routes.size}, " +
                     "excludedApps=${config.excludedApps.size}, dns=${config.dnsServer}"
             )
 
@@ -394,7 +398,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
                 setBooleanPrefValue(true, OscPrefKey.ROOT_STATE, prefs)
                 setBooleanPrefValue(true, OscPrefKey.HOME_CONNECTOR, prefs)
                 setStringPrefValue(
-                    "SoftEther\n$host:$port" + if (assignedIp.isNotEmpty()) "\n$assignedIp" else "",
+                    (if (udpMode) "SoftEther UDP" else "SoftEther TCP") + "\n$host:$port" + if (assignedIp.isNotEmpty()) "\n$assignedIp" else "",
                     OscPrefKey.HOME_STATUS,
                     prefs
                 )
@@ -470,8 +474,11 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
             sessionName = "Banafsh",
             routes = routes(app, prefs),
             excludedApps = excludedApps(prefs),
-            useTcp = true,
-            useUdp = false,
+            // TCP only keeps all data on the TCP session; otherwise the server may move the data to UDP.
+            useTcp = !udpMode,
+            useUdp = udpMode,
+            // UDP packets that are too large get fragmented or dropped on the way, so keep them smaller.
+            mtu = if (udpMode) 1400 else 1500,
             country = if (ui.getString("server_host", "") == getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)) {
                 ui.getString("server_country", "").orEmpty()
             } else "",
