@@ -7,4 +7,5 @@
     <string name="bs_protocol_softether_desc">پروتکل بومی SoftEther؛ نسخه‌ی آزمایشی</string>
     <string name="bs_protocol_next">پروتکل جدید در اتصال بعدی اعمال می‌شود</string>
     <string name="bs_server_address_protocol">آدرس سرور · %1$s</string>
+    <string name="bs_softether_native_failed">موتور SoftEther بارگذاری نشد</string>
 </resources>

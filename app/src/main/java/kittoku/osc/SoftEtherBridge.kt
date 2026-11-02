@@ -4,23 +4,56 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.VpnService
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
+import kittoku.osc.control.LogWriter
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getSetPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
+import kittoku.osc.preference.accessor.getURIPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setStringPrefValue
 import vn.unlimit.softether.SoftEtherVpnService
 import vn.unlimit.softether.model.AuthMethod
 import vn.unlimit.softether.model.ConnectionConfig
 import vn.unlimit.softether.model.Route
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+
+/** Log file shared by the callbacks (main thread) and the logcat reader thread. */
+private class LogSink(private val writer: LogWriter) {
+    private var closed = false
+
+    @Synchronized
+    fun write(message: String) {
+        if (closed) return
+        try {
+            writer.write(message)
+            writer.flush()
+        } catch (_: Exception) {
+        }
+    }
+
+    @Synchronized
+    fun close() {
+        if (closed) return
+        closed = true
+        try {
+            writer.close()
+        } catch (_: Exception) {
+        }
+    }
+}
 
 /**
  * Connects the SoftEther module to the same screens SSTP uses.
@@ -47,6 +80,10 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     @Volatile private var startedAt = 0L
     @Volatile private var retryPending = false
     private var retriesLeft = 0
+    private var attempt = 0
+
+    private var logSink: LogSink? = null
+    private var dumpThread: Thread? = null
 
     private val retryTask = Runnable {
         retryPending = false
@@ -61,8 +98,92 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
         if (!registered) {
             registered = true
+
+            // The process died while SoftEther was active (crash or kill): keep what logcat still has about it.
+            if (isActive(appContext!!)) {
+                recoverPreviousSession(appContext!!)
+            }
+
             SoftEtherVpnService.addStateListener(this)
         }
+    }
+
+    // ---- diagnostics (same log folder as the SSTP log) -------------------------------------
+
+    private val logKeys = listOf(
+        "SoftEther", "TunTerminal", "KeepAliveManager", "DuplexModeSelector", "ConnectionController",
+        "AndroidRuntime", "FATAL", "DEBUG", "libc", "VpnService"
+    )
+
+    private fun openSink(app: Context, prefs: SharedPreferences, suffix: String): LogSink? {
+        if (!getBooleanPrefValue(OscPrefKey.LOG_DO_SAVE_LOG, prefs)) return null
+
+        return try {
+            val uri = getURIPrefValue(OscPrefKey.LOG_DIR, prefs) ?: return null
+            val dir = DocumentFile.fromTreeUri(app, uri) ?: return null
+            val stamp = SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(Date())
+            val file = dir.createFile("text/plain", "log_osc_${stamp}_softether$suffix.txt") ?: return null
+            val stream = app.contentResolver.openOutputStream(file.uri, "wa") ?: return null
+            LogSink(LogWriter(stream))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun log(message: String) {
+        logSink?.write("[${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())}] $message")
+    }
+
+    // An app can read its own logcat lines without any permission.
+    private fun readOwnLogcat(max: Int = 300): List<String> = try {
+        val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "2000", "-v", "time"))
+        val lines = process.inputStream.bufferedReader().useLines { sequence ->
+            sequence.filter { line -> logKeys.any { line.contains(it) } }.toList()
+        }
+        process.destroy()
+        lines.takeLast(max)
+    } catch (e: Exception) {
+        listOf("logcat is not readable: ${e.message}")
+    }
+
+    private fun dumpLogcat(title: String) {
+        val sink = logSink ?: return
+
+        val thread = Thread {
+            sink.write("--- $title: engine log (logcat) ---")
+            readOwnLogcat().forEach { sink.write(it) }
+            sink.write("--- end ---")
+        }
+        dumpThread = thread
+        thread.start()
+    }
+
+    private fun closeLog() {
+        val sink = logSink ?: return
+        logSink = null
+
+        val thread = dumpThread
+        if (thread != null && thread.isAlive) {
+            Thread {
+                try {
+                    thread.join(4000)
+                } catch (_: InterruptedException) {
+                }
+                sink.close()
+            }.start()
+        } else {
+            sink.close()
+        }
+    }
+
+    private fun recoverPreviousSession(app: Context) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(app)
+        val sink = openSink(app, prefs, "_recovered") ?: return
+
+        logSink = sink
+        log("The previous SoftEther session ended without a clean disconnect (crash or kill)")
+        dumpLogcat("Previous session")
+        closeLog()
     }
 
     private fun ui(context: Context) = context.getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
@@ -105,6 +226,12 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         setBooleanPrefValue(true, OscPrefKey.HOME_CONNECTOR, prefs)
         setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
 
+        attempt = 0
+        closeLog()
+        logSink = openSink(app, prefs, "")
+        log("SoftEther connect requested")
+        log("Device: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ABIs ${Build.SUPPORTED_ABIS.joinToString()}, ${Build.MANUFACTURER} ${Build.MODEL}")
+
         if (tunnelIsUp()) {
             // Still connected to an old server: drop it first so the new one is really used.
             restarting = true
@@ -127,6 +254,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         restarting = false
         retryPending = false
         handler.removeCallbacksAndMessages(null)
+        log("Disconnect requested by the user")
 
         if (tunnelIsUp()) {
             // The state report that follows clears the saved state.
@@ -141,13 +269,37 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
         sawProgress = false
         startedAt = SystemClock.elapsedRealtime()
+        attempt++
 
-        ContextCompat.startForegroundService(
-            app,
-            Intent(app, SoftEtherVpnService::class.java)
-                .setAction(SoftEtherVpnService.ACTION_CONNECT)
-                .putExtra(SoftEtherVpnService.EXTRA_CONFIG, buildConfig(app, prefs))
-        )
+        // A missing or broken native library would otherwise kill the app inside the service.
+        try {
+            System.loadLibrary("softether")
+        } catch (t: Throwable) {
+            log("Attempt $attempt: the native SoftEther library could not be loaded: $t")
+            Toast.makeText(app, R.string.bs_softether_native_failed, Toast.LENGTH_LONG).show()
+            finish(app, prefs)
+            return
+        }
+
+        try {
+            val config = buildConfig(app, prefs)
+
+            log(
+                "Attempt $attempt: ${config.serverHost}:${config.serverPort}, user=${config.username}, hub=${config.virtualHub}, " +
+                    "tcp=${config.useTcp}, udp=${config.useUdp}, routes=${config.routes.size}, " +
+                    "excludedApps=${config.excludedApps.size}, dns=${config.dnsServer}"
+            )
+
+            ContextCompat.startForegroundService(
+                app,
+                Intent(app, SoftEtherVpnService::class.java)
+                    .setAction(SoftEtherVpnService.ACTION_CONNECT)
+                    .putExtra(SoftEtherVpnService.EXTRA_CONFIG, config)
+            )
+        } catch (e: Exception) {
+            log("Attempt $attempt: could not start the SoftEther service: $e")
+            finish(app, prefs)
+        }
     }
 
     private fun sendDisconnect(app: Context) {
@@ -166,6 +318,8 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         if (!isActive(app)) return
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(app)
+
+        log("State: $state" + if (assignedIp.isNotEmpty()) " (ip $assignedIp)" else "")
 
         when (state) {
             SoftEtherVpnService.STATE_CONNECTING,
@@ -209,7 +363,13 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
         if (!userStopped) {
             val stale = !sawProgress && SystemClock.elapsedRealtime() - startedAt < STALE_MS
-            if (stale) return
+            if (stale) {
+                log("Ignored a disconnect report that belongs to the previous run")
+                return
+            }
+
+            log("The tunnel ended without the user asking (retries left: $retriesLeft)")
+            dumpLogcat("Attempt $attempt")
 
             if (retriesLeft > 0 && VpnService.prepare(app) == null) {
                 retriesLeft--
@@ -229,6 +389,9 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     }
 
     private fun finish(app: Context, prefs: SharedPreferences) {
+        log("SoftEther session finished")
+        closeLog()
+
         handler.removeCallbacks(retryTask)
         retryPending = false
         userStopped = true

@@ -10,4 +10,5 @@
     <string name="bs_protocol_softether_desc">SoftEther\'s own protocol; experimental</string>
     <string name="bs_protocol_next">The new protocol is used the next time you connect</string>
     <string name="bs_server_address_protocol">Server Address · %1$s</string>
+    <string name="bs_softether_native_failed">The SoftEther engine could not be loaded</string>
 </resources>
