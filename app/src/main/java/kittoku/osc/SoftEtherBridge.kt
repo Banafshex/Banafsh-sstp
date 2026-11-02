@@ -69,6 +69,9 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     private const val STALE_MS = 1500L
     private const val RESTART_DELAY_MS = 2000L
 
+    // The free VPN Gate relays only have this virtual hub (the default "VPN" gets error 8 = hub not found).
+    private const val VPN_GATE_HUB = "VPNGATE"
+
     private val handler = Handler(Looper.getMainLooper())
 
     private var appContext: Context? = null
@@ -84,6 +87,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
     private var logSink: LogSink? = null
     private var dumpThread: Thread? = null
+    private var sessionStamp: String? = null
 
     private val retryTask = Runnable {
         retryPending = false
@@ -135,10 +139,14 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
     }
 
     // An app can read its own logcat lines without any permission.
-    private fun readOwnLogcat(max: Int = 300): List<String> = try {
+    private fun readOwnLogcat(since: String?, max: Int = 300): List<String> = try {
         val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "2000", "-v", "time"))
         val lines = process.inputStream.bufferedReader().useLines { sequence ->
-            sequence.filter { line -> logKeys.any { line.contains(it) } }.toList()
+            sequence.filter { line ->
+                // "MM-dd HH:mm:ss.SSS ..." sorts as text, so older attempts are skipped
+                (since == null || (line.length >= 18 && line.substring(0, 18) >= since)) &&
+                    logKeys.any { line.contains(it) }
+            }.toList()
         }
         process.destroy()
         lines.takeLast(max)
@@ -148,10 +156,11 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
 
     private fun dumpLogcat(title: String) {
         val sink = logSink ?: return
+        val since = sessionStamp
 
         val thread = Thread {
             sink.write("--- $title: engine log (logcat) ---")
-            readOwnLogcat().forEach { sink.write(it) }
+            readOwnLogcat(since).forEach { sink.write(it) }
             sink.write("--- end ---")
         }
         dumpThread = thread
@@ -180,6 +189,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         val prefs = PreferenceManager.getDefaultSharedPreferences(app)
         val sink = openSink(app, prefs, "_recovered") ?: return
 
+        sessionStamp = null
         logSink = sink
         log("The previous SoftEther session ended without a clean disconnect (crash or kill)")
         dumpLogcat("Previous session")
@@ -227,6 +237,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
         setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
 
         attempt = 0
+        sessionStamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         closeLog()
         logSink = openSink(app, prefs, "")
         log("SoftEther connect requested")
@@ -416,6 +427,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener {
             serverPort = getIntPrefValue(OscPrefKey.SSL_PORT, prefs),
             username = getStringPrefValue(OscPrefKey.HOME_USERNAME, prefs),
             password = getStringPrefValue(OscPrefKey.HOME_PASSWORD, prefs),
+            virtualHub = VPN_GATE_HUB,
             sessionName = "Banafsh",
             routes = routes(app, prefs),
             excludedApps = excludedApps(prefs),
