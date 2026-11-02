@@ -68,3 +68,24 @@ dependencies {
     implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
 }
+
+// The OpenSSL headers are not in the repo (the libraries are prebuilt, the headers are fetched).
+// Fetch them automatically before any native build, so no workflow or manual step is needed.
+// Needs: bash, git, perl, make, gcc (all present on GitHub's ubuntu runners).
+def opensslEvpHeader = file('src/main/cpp/openssl/include/openssl/evp.h')
+def opensslConfigHeader = file('src/main/cpp/openssl/include/openssl/configuration.h')
+
+tasks.register('fetchOpenSslHeaders', Exec) {
+    onlyIf { !opensslEvpHeader.exists() || !opensslConfigHeader.exists() }
+    workingDir projectDir
+    commandLine 'bash', 'fetch-openssl-headers.sh'
+}
+
+tasks.matching {
+    it.name == 'preBuild' ||
+            it.name.startsWith('generateJsonModel') ||
+            it.name.startsWith('configureCMake') ||
+            it.name.startsWith('buildCMake')
+}.configureEach {
+    dependsOn 'fetchOpenSslHeaders'
+}

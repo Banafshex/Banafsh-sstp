@@ -5,8 +5,8 @@
 
 - فقط TCP (بدون RUDP) و فقط دو ABI گوشی: `arm64-v8a` و `armeabi-v7a`
 - `src/main/jniLibs/*/libssl.a` و `libcrypto.a`: OpenSSL 3.6.5 که از قبل کامپایل شده (از خود ریپوی ماژول)
-- هدرهای OpenSSL توی ریپو نیستن. GitHub Actions خودش با `fetch-openssl-headers.sh` می‌سازدشون.
-  برای بیلد روی سیستم خودت یک‌بار این رو اجرا کن:
+- هدرهای OpenSSL توی ریپو نیستن. Gradle خودش (تسک `fetchOpenSslHeaders`) قبل از بیلد با `fetch-openssl-headers.sh` می‌سازدشون.
+  اگه خواستی دستی بسازیشون:
 
       bash softether/fetch-openssl-headers.sh
 
