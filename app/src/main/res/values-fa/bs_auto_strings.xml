@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_auto_pick">انتخاب خودکار بهترین سرور</string>
+    <string name="bs_servers_hint">سرعت بالا و پینگ پایین، انتخاب بهتری است.</string>
+    <string name="bs_auto_title">در حال انتخاب بهترین سرور…</string>
+    <string name="bs_auto_wait">اگر کمی صبر کنی، بهترین سرور را برای اینترنتی که به آن وصلی انتخاب می‌کنیم. ممکن است تا ۲ دقیقه طول بکشد. در همین حال می‌توانی روی هر سروری که پینگش آمده «اتصال» بزنی.</string>
+    <string name="bs_auto_stop">توقف</string>
+    <string name="bs_auto_step_connecting">سرور %1$d از %2$d · در حال اتصال…</string>
+    <string name="bs_auto_step_measuring">سرور %1$d از %2$d · در حال سنجش سرعت…</string>
+    <string name="bs_auto_step_disconnecting">سرور %1$d از %2$d · در حال قطع اتصال…</string>
+    <string name="bs_real_speed">سرعت واقعی: %1$s Mbps</string>
+    <string name="bs_speed_testing">در حال سنجش سرعت…</string>
+    <string name="bs_speed_failed">سنجش سرعت ناموفق</string>
+    <string name="bs_auto_best">بهترین سرور: %1$s · %2$s Mbps · %3$d ms</string>
+    <string name="bs_auto_none">هیچ سروری سنجش سرعت را کامل نکرد. بعداً دوباره امتحان کن یا خودت یکی را انتخاب کن.</string>
+    <string name="bs_auto_need_permission">اول یک بار با دکمه‌ی اصلی وصل شو تا اندروید مجوز VPN را بپرسد.</string>
+    <string name="bs_auto_disconnect_first">برای انتخاب خودکار، اول اتصال را قطع کن.</string>
+</resources>

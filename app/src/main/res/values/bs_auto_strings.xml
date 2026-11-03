@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_auto_pick">Auto-pick the best server</string>
+    <string name="bs_servers_hint">High speed and low ping make a better choice.</string>
+    <string name="bs_auto_title">Choosing the best server…</string>
+    <string name="bs_auto_wait">If you wait a little, we pick the best server for the internet you are on. It may take up to 2 minutes. Meanwhile you can tap Connect on any server whose ping is shown.</string>
+    <string name="bs_auto_stop">Stop</string>
+    <string name="bs_auto_step_connecting">Server %1$d of %2$d · connecting…</string>
+    <string name="bs_auto_step_measuring">Server %1$d of %2$d · measuring speed…</string>
+    <string name="bs_auto_step_disconnecting">Server %1$d of %2$d · disconnecting…</string>
+    <string name="bs_real_speed">Real speed: %1$s Mbps</string>
+    <string name="bs_speed_testing">Measuring speed…</string>
+    <string name="bs_speed_failed">Speed test failed</string>
+    <string name="bs_auto_best">Best server: %1$s · %2$s Mbps · %3$d ms</string>
+    <string name="bs_auto_none">No server finished the speed test. Try again later or pick one yourself.</string>
+    <string name="bs_auto_need_permission">Connect once with the main button first, so Android can ask for the VPN permission.</string>
+    <string name="bs_auto_disconnect_first">To pick automatically, disconnect first.</string>
+</resources>

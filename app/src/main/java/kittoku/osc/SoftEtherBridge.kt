@@ -73,6 +73,9 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
     // The free VPN Gate relays only have this virtual hub (the default "VPN" gets error 8 = hub not found).
     private const val VPN_GATE_HUB = "VPNGATE"
 
+    // The auto-pick run connects to many servers in a row and does not want a log file for each.
+    @Volatile var suppressLog = false
+
     private val handler = Handler(Looper.getMainLooper())
 
     private var appContext: Context? = null
@@ -268,7 +271,7 @@ internal object SoftEtherBridge : SoftEtherVpnService.StateListener, SoftEtherVp
         udpMode = ProtocolSwitch.get(app) == Protocol.SOFTETHER_UDP
         sessionStamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
         closeLog()
-        logSink = openSink(app, prefs, "")
+        logSink = if (suppressLog) null else openSink(app, prefs, "")
         log("SoftEther connect requested, mode: " + if (udpMode) "UDP acceleration" else "TCP")
         log("Device: Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ABIs ${Build.SUPPORTED_ABIS.joinToString()}, ${Build.MANUFACTURER} ${Build.MODEL}")
 
