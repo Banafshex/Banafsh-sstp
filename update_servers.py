@@ -8,7 +8,12 @@ API_URLS = [
     "http://www.vpngate.net/api/iphone/",
 ]
 DDNS_SUFFIX = ".opengw.net"
-OUTPUT_FILE = "servers.json"
+# Two files, because two kinds of app read this repository:
+#  - servers.json    : short list for the old app versions (they rebuild the whole screen after every ping)
+#  - servers_v2.json : the full list for the versions with the country screen
+LEGACY_FILE = "servers.json"
+OUTPUT_FILE = "servers_v2.json"
+LEGACY_SIZE = 60
 
 # The numbers VPN Gate publishes (speed, ping, sessions) are measured from Japan, so this script
 # does not try to find the "best" server. It keeps every server that can work at all; the app groups
@@ -229,18 +234,41 @@ def parse_servers(csv_text):
     return pool
 
 
+def legacy_list(servers):
+    """The old apps get a short list of the better-looking servers."""
+    better = [s for s in servers if s["speed_mbps"] >= 50 and s["uptime_hours"] >= 3]
+    return (better or servers)[:LEGACY_SIZE]
+
+
+def stage_in_git(path):
+    """The workflow only adds servers.json by itself: stage the new file so the same commit carries it."""
+    import subprocess
+
+    try:
+        subprocess.run(["git", "add", path], check=True, capture_output=True)
+        print(f"Staged {path} for the commit")
+    except Exception as e:  # noqa: BLE001
+        print(f"Could not stage {path} (fine when not run by the workflow): {e}")
+
+
+def write_json(path, servers):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(servers, f, ensure_ascii=False, indent=2)
+    print(f"Saved {len(servers)} servers to {path}")
+
+
 def main():
     servers = parse_servers(fetch_csv_text())
     if not servers:
-        print("No usable servers found; keeping the old servers.json")
+        print("No usable servers found; keeping the old files")
         sys.exit(1)
 
     for s in servers[:5]:
         print(f"  {s['host']}:{s['port']}  {s['country']}  {s['speed_mbps']} Mbps  sessions {s['sessions']}")
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(servers, f, ensure_ascii=False, indent=2)
-    print(f"Saved {len(servers)} servers to {OUTPUT_FILE}")
+    write_json(OUTPUT_FILE, servers)
+    write_json(LEGACY_FILE, legacy_list(servers))
+    stage_in_git(OUTPUT_FILE)
 
 
 if __name__ == "__main__":

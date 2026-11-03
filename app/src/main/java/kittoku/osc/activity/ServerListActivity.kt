@@ -63,8 +63,12 @@ private fun qualityOf(server: FreeServer): Quality = when {
     else -> Quality.BAD
 }
 
-private const val FREE_SERVERS_URL =
-    "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json"
+// The full list first; the short list that older versions use stays as a fallback
+// (for example before the first refresh that creates servers_v2.json).
+private val FREE_SERVERS_URLS = listOf(
+    "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers_v2.json",
+    "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json",
+)
 
 private const val PENDING = -2
 
@@ -198,7 +202,23 @@ class ServerListActivity : AppCompatActivity() {
     }
 
     private fun downloadFreeServers(): List<FreeServer> {
-        val connection = URL(FREE_SERVERS_URL).openConnection() as HttpURLConnection
+        for (url in FREE_SERVERS_URLS) {
+            val result = try {
+                downloadFrom(url)
+            } catch (e: Exception) {
+                emptyList()
+            }
+
+            if (result.isNotEmpty()) {
+                return result
+            }
+        }
+
+        return emptyList()
+    }
+
+    private fun downloadFrom(url: String): List<FreeServer> {
+        val connection = URL(url).openConnection() as HttpURLConnection
         connection.connectTimeout = 15000
         connection.readTimeout = 15000
 
