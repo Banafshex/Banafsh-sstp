@@ -2,6 +2,7 @@ import base64
 import csv
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 
 API_URLS = [
     "https://www.vpngate.net/api/iphone/",
@@ -19,8 +20,11 @@ LEGACY_SIZE = 60
 # does not try to find the "best" server. It keeps every server that can work at all; the app groups
 # them by country, measures the real ping from the phone, and shows a quality label.
 POOL_SIZE = 400           # upper bound for the number of servers written to servers.json
-MIN_SPEED_MBPS = 10       # below this a server is not worth listing
-MIN_UPTIME_HOURS = 1      # very young servers often disappear before the next refresh
+MIN_SPEED_MBPS = 1        # almost nothing is dropped: the app pings every server before it is shown as working
+MIN_UPTIME_HOURS = 0
+DEFAULT_PORT = 443        # used when the OpenVPN config shows no TCP port (SoftEther servers listen on 443)
+EXCLUDED_COUNTRIES = {"RU"}  # blocks too many sites (Instagram, ...): never listed
+CARRY_HOURS = 24          # a server that left VPN Gate's list stays this long; the app's ping drops dead ones
 SPEED_CAP_MBPS = 300      # only used to order the file: a measurement above this tells nothing more
 LOAD_SESSIONS = 60        # only used to order the file: every LOAD_SESSIONS sessions halve the rank
 
@@ -117,6 +121,7 @@ def parse_servers(csv_text):
     lines = csv_text.replace("\r", "").split("\n")
     rows_total = 0
     no_tcp_port = 0
+    excluded = 0
     too_slow = 0
     too_young = 0
     servers = []
@@ -130,10 +135,15 @@ def parse_servers(csv_text):
             continue
         rows_total += 1
 
+        country_code = row[6].strip()
+        if country_code in EXCLUDED_COUNTRIES:
+            excluded += 1
+            continue
+
         port, udp_port = ports_from_config(row[14])
         if port is None:
             no_tcp_port += 1
-            continue  # cannot know the TCP port (used by SSTP and SoftEther) -> skip this server
+            port = DEFAULT_PORT  # a guess: the app's ping test shows whether it answers
 
         speed_mbps = round(to_float(row[4]) / 1_000_000, 2)
         if speed_mbps < MIN_SPEED_MBPS:
@@ -151,7 +161,7 @@ def parse_servers(csv_text):
             "ip": row[1].strip(),
             "port": port,
             "udp_port": udp_port or 0,
-            "country": row[6].strip(),
+            "country": country_code,
             "country_name": row[5].strip(),
             "speed_mbps": speed_mbps,   # measured from Japan: informational only
             "ping": to_int(row[3], 999),  # measured from Japan: informational only
@@ -168,69 +178,12 @@ def parse_servers(csv_text):
         per_country[s["country"]] = per_country.get(s["country"], 0) + 1
 
     print(
-        f"Rows parsed: {rows_total}; dropped: {no_tcp_port} without TCP port, {too_slow} slower than "
-        f"{MIN_SPEED_MBPS} Mbps, {too_young} younger than {MIN_UPTIME_HOURS} h; "
+        f"Rows parsed: {rows_total}; excluded country: {excluded}; no TCP port in config (port {DEFAULT_PORT} "
+        f"assumed): {no_tcp_port}; dropped: {too_slow} slower than {MIN_SPEED_MBPS} Mbps, "
+        f"{too_young} younger than {MIN_UPTIME_HOURS} h; "
         f"pool: {len(pool)} servers from {len(per_country)} countries"
     )
     print("Per country: " + ", ".join(f"{c} {n}" for c, n in sorted(per_country.items(), key=lambda x: -x[1])))
-    return pool
-
-
-def parse_servers(csv_text):
-    lines = csv_text.replace("\r", "").split("\n")
-    rows_total = 0
-    no_tcp_port = 0
-    too_slow = 0
-    too_young = 0
-    servers = []
-
-    reader = csv.reader(lines[2:])
-    for row in reader:
-        if len(row) < 15:
-            continue
-        host_name = row[0].strip()
-        if not host_name or host_name.startswith(("#", "*")):
-            continue
-        rows_total += 1
-
-        port, udp_port = ports_from_config(row[14])
-        if port is None:
-            no_tcp_port += 1
-            continue  # cannot know the TCP port (used by SSTP and SoftEther) -> skip this server
-
-        speed_mbps = round(to_float(row[4]) / 1_000_000, 2)
-        if speed_mbps < MIN_SPEED_MBPS:
-            too_slow += 1
-            continue
-
-        uptime_hours = round(to_float(row[8]) / 3_600_000, 1)
-        if uptime_hours < MIN_UPTIME_HOURS:
-            too_young += 1
-            continue
-
-        servers.append({
-            "host_name": host_name,
-            "host": host_name + DDNS_SUFFIX,
-            "ip": row[1].strip(),
-            "port": port,
-            "udp_port": udp_port or 0,
-            "country": row[6].strip(),
-            "country_name": row[5].strip(),
-            "speed_mbps": speed_mbps,   # measured from Japan: informational only
-            "ping": to_int(row[3], 999),  # measured from Japan: informational only
-            "sessions": to_int(row[7], 999),
-            "score": to_int(row[2], 0),
-            "uptime_hours": uptime_hours,
-            "operator": row[12].strip() if len(row) > 12 else "",
-        })
-
-    pool = select_pool(servers)
-
-    countries = len({s["country"] for s in pool})
-    print(
-        f"Rows parsed: {rows_total}, candidates (TCP port, speed >= {MIN_SPEED_MBPS} Mbps, "
-        f"uptime >= {MIN_UPTIME_HOURS} h): {len(servers)}, pool: {len(pool)} servers from {countries} countries"
-    )
     return pool
 
 
@@ -238,6 +191,54 @@ def legacy_list(servers):
     """The old apps get a short list of the better-looking servers."""
     better = [s for s in servers if s["speed_mbps"] >= 50 and s["uptime_hours"] >= 3]
     return (better or servers)[:LEGACY_SIZE]
+
+
+def load_previous(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def merge_with_previous(fresh, previous, now):
+    """VPN Gate's list changes all the time. Servers that just left it are kept for CARRY_HOURS:
+    the app pings every server, so the dead ones simply show as not answering.
+    Their session count is old, so it is set to 0 and the app shows their quality as unknown."""
+    stamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    merged = {}
+
+    for s in fresh:
+        entry = dict(s)
+        entry["last_seen"] = stamp
+        entry["carried"] = False
+        merged[entry["host"]] = entry
+
+    carried = 0
+    for old in previous:
+        host = old.get("host")
+        if not host or host in merged or old.get("country") in EXCLUDED_COUNTRIES:
+            continue
+
+        try:
+            seen = datetime.strptime(old["last_seen"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        except Exception:  # noqa: BLE001
+            seen = now  # first run with this feature: it was listed one refresh ago
+
+        if now - seen > timedelta(hours=CARRY_HOURS):
+            continue
+
+        entry = dict(old)
+        entry["last_seen"] = seen.strftime("%Y-%m-%dT%H:%M:%SZ")
+        entry["carried"] = True
+        entry["sessions"] = 0
+        merged[host] = entry
+        carried += 1
+
+    result = sorted(merged.values(), key=quality, reverse=True)[:POOL_SIZE]
+    print(f"Carried over from earlier refreshes: {carried}; total in {OUTPUT_FILE}: {len(result)}")
+    return result
 
 
 def stage_in_git(path):
@@ -258,16 +259,18 @@ def write_json(path, servers):
 
 
 def main():
-    servers = parse_servers(fetch_csv_text())
-    if not servers:
+    fresh = parse_servers(fetch_csv_text())
+    if not fresh:
         print("No usable servers found; keeping the old files")
         sys.exit(1)
 
-    for s in servers[:5]:
+    for s in fresh[:5]:
         print(f"  {s['host']}:{s['port']}  {s['country']}  {s['speed_mbps']} Mbps  sessions {s['sessions']}")
 
-    write_json(OUTPUT_FILE, servers)
-    write_json(LEGACY_FILE, legacy_list(servers))
+    full = merge_with_previous(fresh, load_previous(OUTPUT_FILE), datetime.now(timezone.utc))
+
+    write_json(OUTPUT_FILE, full)
+    write_json(LEGACY_FILE, legacy_list(fresh))
     stage_in_git(OUTPUT_FILE)
 
 
