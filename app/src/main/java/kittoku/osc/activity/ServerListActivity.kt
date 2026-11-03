@@ -47,6 +47,8 @@ internal data class FreeServer(
     val udpPort: Int = 0,
 )
 
+private val EXCLUDED_COUNTRIES = setOf("RU")
+
 private enum class Quality { GOOD, MEDIUM, BAD, UNKNOWN }
 
 // Share of the announced server speed that each user gets (Mbps per session).
@@ -54,6 +56,14 @@ private const val GOOD_SHARE = 8.0
 private const val MEDIUM_SHARE = 3.0
 
 private fun shareOf(server: FreeServer): Double = server.speedMbps / (server.sessions + 1)
+
+// Order of the tiers in the list: good first, then medium, then unknown, bad last.
+private fun qualityRank(server: FreeServer): Int = when (qualityOf(server)) {
+    Quality.GOOD -> 0
+    Quality.MEDIUM -> 1
+    Quality.UNKNOWN -> 2
+    Quality.BAD -> 3
+}
 
 // A server with 0 or 1 session may simply be new, or one nobody can use: no verdict for it.
 private fun qualityOf(server: FreeServer): Quality = when {
@@ -233,6 +243,11 @@ class ServerListActivity : AppCompatActivity() {
                 val port = obj.optInt("port", 0)
 
                 if (host.isEmpty() || port !in 1..65535) {
+                    continue
+                }
+
+                // Never listed: too many sites are blocked there (the list file leaves it out too).
+                if (obj.optString("country") in EXCLUDED_COUNTRIES) {
                     continue
                 }
 
@@ -434,7 +449,8 @@ class ServerListActivity : AppCompatActivity() {
     private fun renderServers() {
         list.removeAllViews()
 
-        // Answered servers by ping; the ones not answered yet by quality.
+        // Servers that answered come first: by quality tier (good first), inside a tier by the lowest ping.
+        // The ones not answered yet follow by quality, and the ones that failed are last.
         val order = visible.sortedWith(
             compareBy<Int> {
                 when {
@@ -442,7 +458,9 @@ class ServerListActivity : AppCompatActivity() {
                     results[it] == PENDING -> 1
                     else -> 2
                 }
-            }.thenBy { if (results[it] > 0) results[it].toDouble() else -shareOf(servers[it]) }
+            }
+                .thenBy { qualityRank(servers[it]) }
+                .thenBy { if (results[it] > 0) results[it].toDouble() else -shareOf(servers[it]) }
         )
 
         val purple = getColor(R.color.banafsh_purple)
