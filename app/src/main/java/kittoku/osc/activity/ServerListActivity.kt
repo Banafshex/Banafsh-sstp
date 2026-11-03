@@ -5,11 +5,11 @@ import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.VpnService
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -43,7 +43,25 @@ internal data class FreeServer(
     val countryCode: String,
     val speedMbps: Double,
     val ping: Int,
+    val sessions: Int = 0,
+    val udpPort: Int = 0,
 )
+
+private enum class Quality { GOOD, MEDIUM, BAD, UNKNOWN }
+
+// Share of the announced server speed that each user gets (Mbps per session).
+private const val GOOD_SHARE = 8.0
+private const val MEDIUM_SHARE = 3.0
+
+private fun shareOf(server: FreeServer): Double = server.speedMbps / (server.sessions + 1)
+
+// A server with 0 or 1 session may simply be new, or one nobody can use: no verdict for it.
+private fun qualityOf(server: FreeServer): Quality = when {
+    server.sessions <= 1 -> Quality.UNKNOWN
+    shareOf(server) >= GOOD_SHARE -> Quality.GOOD
+    shareOf(server) >= MEDIUM_SHARE -> Quality.MEDIUM
+    else -> Quality.BAD
+}
 
 private const val FREE_SERVERS_URL =
     "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json"
@@ -52,7 +70,10 @@ private const val PENDING = -2
 
 private val IP_REGEX = Regex("""^\d{1,3}(\.\d{1,3}){3}$""")
 
-/** The "free servers" page: downloads the list, tests every server from the user's own network, lets the user connect. */
+/**
+ * The "free servers" page: downloads the list, shows the countries; a country opens its servers,
+ * which are tested from the user's own network and shown with ping and a quality label.
+ */
 class ServerListActivity : AppCompatActivity() {
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(kittoku.osc.LocaleFix.wrap(newBase))
@@ -66,6 +87,8 @@ class ServerListActivity : AppCompatActivity() {
 
     private var servers: List<FreeServer> = emptyList()
     private var results = IntArray(0)
+    private var currentCountry: String? = null   // null: the country list is shown
+    private var visible: List<Int> = emptyList() // indices of the servers of the open country
     private var finished = 0
     private var testing = false
     private var vpnOn = false
@@ -74,19 +97,10 @@ class ServerListActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var tvNote: TextView
+    private lateinit var tvHint: TextView
     private lateinit var btnTestAll: MaterialButton
     private lateinit var progress: ProgressBar
     private lateinit var list: LinearLayout
-    private lateinit var btnAuto: MaterialButton
-    private lateinit var cardAuto: View
-    private lateinit var barAuto: ProgressBar
-    private lateinit var tvAutoPercent: TextView
-    private lateinit var tvAutoStep: TextView
-
-    // Real speed of each server, filled by the auto-pick run (nothing is shown before it is measured).
-    private var rowStates = IntArray(0)
-    private var rowSpeeds = DoubleArray(0)
-    private var picker: AutoPicker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
@@ -108,30 +122,31 @@ class ServerListActivity : AppCompatActivity() {
         }
 
         tvNote = findViewById(R.id.tvTestNote)
+        tvHint = findViewById(R.id.tvHint)
         btnTestAll = findViewById(R.id.btnTestAll)
         progress = findViewById(R.id.progress)
         list = findViewById(R.id.listServers)
 
         btnTestAll.setOnClickListener { startTest() }
-        btnTestAll.isEnabled = false
-        btnTestAll.alpha = 0.5f
+        btnTestAll.setText(R.string.bs_test_again)
+        btnTestAll.visibility = View.GONE
 
-        btnAuto = findViewById(R.id.btnAuto)
-        cardAuto = findViewById(R.id.cardAuto)
-        barAuto = findViewById(R.id.barAuto)
-        tvAutoPercent = findViewById(R.id.tvAutoPercent)
-        tvAutoStep = findViewById(R.id.tvAutoStep)
-
-        btnAuto.setOnClickListener { startAuto() }
-        btnAuto.isEnabled = false
-        btnAuto.alpha = 0.5f
-        findViewById<View>(R.id.btnAutoStop).setOnClickListener { picker?.cancel() }
+        // Back from a country returns to the country list first.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (currentCountry != null) {
+                    showCountries()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
 
         load()
     }
 
     override fun onDestroy() {
-        picker?.cancel()
         generation++
         executor?.shutdownNow()
         super.onDestroy()
@@ -139,7 +154,7 @@ class ServerListActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
-            finish()
+            if (currentCountry != null) showCountries() else finish()
             return true
         }
 
@@ -174,17 +189,10 @@ class ServerListActivity : AppCompatActivity() {
 
                 servers = downloaded
                 results = IntArray(servers.size) { PENDING }
-                rowStates = IntArray(servers.size)
-                rowSpeeds = DoubleArray(servers.size)
                 vpnOn = isVpnActive()
 
-                if (vpnOn) {
-                    // A test through the tunnel would be misleading, so only the plain list is shown.
-                    updateNote()
-                    render()
-                } else {
-                    startTest()
-                }
+                // Nothing is tested yet: a country is tested when it is opened.
+                showCountries()
             }
         }.start()
     }
@@ -216,6 +224,8 @@ class ServerListActivity : AppCompatActivity() {
                         countryCode = obj.optString("country"),
                         speedMbps = obj.optDouble("speed_mbps", 0.0),
                         ping = obj.optInt("ping", 0),
+                        sessions = obj.optInt("sessions", 0),
+                        udpPort = obj.optInt("udp_port", 0),
                     )
                 )
             }
@@ -241,13 +251,52 @@ class ServerListActivity : AppCompatActivity() {
 
     // ---- Testing ---------------------------------------------------------
 
+    private fun showCountries() {
+        stopTests()
+        currentCountry = null
+        visible = emptyList()
+
+        title = getString(R.string.bs_servers_title)
+        tvHint.visibility = View.GONE
+        btnTestAll.visibility = View.GONE
+
+        updateNote()
+        render()
+    }
+
+    private fun showServers(code: String) {
+        stopTests()
+        currentCountry = code
+        visible = servers.indices.filter { servers[it].countryCode == code }
+
+        val first = servers[visible.first()]
+        title = "${flagEmoji(code)} ${countryName(first)}".trim()
+        tvHint.visibility = View.VISIBLE
+        btnTestAll.visibility = View.VISIBLE
+
+        if (vpnOn) {
+            // A test through the tunnel would be misleading, so only the plain list is shown.
+            updateNote()
+            render()
+        } else {
+            startTest()
+        }
+    }
+
+    private fun stopTests() {
+        generation++
+        executor?.shutdownNow()
+        executor = null
+        testing = false
+    }
+
     private fun startTest() {
-        if (servers.isEmpty() || vpnOn) {
+        if (visible.isEmpty() || vpnOn) {
             return
         }
 
         executor?.shutdownNow()
-        results.fill(PENDING)
+        visible.forEach { results[it] = PENDING }
         finished = 0
         testing = true
         generation++
@@ -259,7 +308,9 @@ class ServerListActivity : AppCompatActivity() {
         updateNote()
         render()
 
-        servers.forEachIndexed { index, server ->
+        visible.forEach { index ->
+            val server = servers[index]
+
             pool.execute {
                 val ms = ServerTester.test(server.host, server.port)
 
@@ -271,7 +322,7 @@ class ServerListActivity : AppCompatActivity() {
                     results[index] = ms
                     finished++
 
-                    if (finished >= servers.size) {
+                    if (finished >= visible.size) {
                         testing = false
                     }
 
@@ -283,24 +334,24 @@ class ServerListActivity : AppCompatActivity() {
     }
 
     private fun updateNote() {
-        val ok = results.count { it > 0 }
+        if (currentCountry == null) {
+            val countries = servers.map { it.countryCode }.distinct().size
+            tvNote.text = getString(R.string.bs_countries_note, servers.size, countries)
+            return
+        }
+
+        val ok = visible.count { results[it] > 0 }
 
         tvNote.text = when {
             vpnOn -> getString(R.string.bs_test_vpn_on)
-            testing -> getString(R.string.bs_test_running, finished, servers.size)
+            testing -> getString(R.string.bs_test_running, finished, visible.size)
             ok == 0 -> getString(R.string.bs_test_none)
             else -> getString(R.string.bs_test_done, ok)
         }
 
-        val autoRunning = picker?.running == true
-        val canTest = !vpnOn && !testing && !autoRunning
+        val canTest = !vpnOn && !testing
         btnTestAll.isEnabled = canTest
         btnTestAll.alpha = if (canTest) 1f else 0.5f
-
-        // Stays tappable while the VPN is on, so a tap can explain why it does not start.
-        val canAuto = !testing && !autoRunning && (vpnOn || ok > 0)
-        btnAuto.isEnabled = canAuto
-        btnAuto.alpha = if (canAuto && !vpnOn) 1f else 0.5f
     }
 
     // ---- Rendering -------------------------------------------------------
@@ -334,16 +385,44 @@ class ServerListActivity : AppCompatActivity() {
     }
 
     private fun render() {
+        if (currentCountry == null) renderCountries() else renderServers()
+    }
+
+    private fun renderCountries() {
         list.removeAllViews()
 
-        val order = servers.indices.sortedWith(
+        val groups = servers.indices.groupBy { servers[it].countryCode }
+        val ordered = groups.entries.sortedWith(
+            compareByDescending<Map.Entry<String, List<Int>>> { it.value.size }
+                .thenBy { countryName(servers[it.value.first()]) }
+        )
+
+        for ((code, indices) in ordered) {
+            val row = layoutInflater.inflate(R.layout.item_country, list, false)
+
+            row.findViewById<TextView>(R.id.tvCountryTitle).text =
+                "${flagEmoji(code)} ${countryName(servers[indices.first()])}".trim()
+            row.findViewById<TextView>(R.id.tvCountryCount).text =
+                if (indices.size == 1) getString(R.string.bs_country_servers_one)
+                else getString(R.string.bs_country_servers, indices.size)
+
+            row.setOnClickListener { showServers(code) }
+            list.addView(row)
+        }
+    }
+
+    private fun renderServers() {
+        list.removeAllViews()
+
+        // Answered servers by ping; the ones not answered yet by quality.
+        val order = visible.sortedWith(
             compareBy<Int> {
                 when {
                     results[it] > 0 -> 0
                     results[it] == PENDING -> 1
                     else -> 2
                 }
-            }.thenBy { if (results[it] > 0) results[it] else it }
+            }.thenBy { if (results[it] > 0) results[it].toDouble() else -shareOf(servers[it]) }
         )
 
         val purple = getColor(R.color.banafsh_purple)
@@ -357,13 +436,32 @@ class ServerListActivity : AppCompatActivity() {
             row.findViewById<TextView>(R.id.tvTitle).text =
                 "${flagEmoji(server.countryCode)} ${countryName(server)} · ${shortName(server.host)}".trim()
 
-            // The speed the list file announces is measured from another country: never shown.
-            val tvSpeed = row.findViewById<TextView>(R.id.tvSpeed)
-            when (rowStates[index]) {
-                AutoPicker.ROW_DONE -> tvSpeed.text = getString(R.string.bs_real_speed, formatMbps(rowSpeeds[index]))
-                AutoPicker.ROW_TESTING -> tvSpeed.setText(R.string.bs_speed_testing)
-                AutoPicker.ROW_FAILED -> tvSpeed.setText(R.string.bs_speed_failed)
-                else -> tvSpeed.visibility = View.GONE
+            // Quality: how much of the server's speed each user gets, from the list's own numbers.
+            val chip = row.findViewById<TextView>(R.id.tvSpeed)
+            when (qualityOf(server)) {
+                Quality.GOOD -> {
+                    chip.setText(R.string.bs_quality_good)
+                    chip.background = pill(0xFFDDF7E8.toInt())
+                    chip.setTextColor(0xFF0B6B30.toInt())
+                }
+
+                Quality.MEDIUM -> {
+                    chip.setText(R.string.bs_quality_medium)
+                    chip.background = pill(0xFFFFF1CC.toInt())
+                    chip.setTextColor(0xFF7A5200.toInt())
+                }
+
+                Quality.BAD -> {
+                    chip.setText(R.string.bs_quality_bad)
+                    chip.background = pill(0xFFFDE7E7.toInt())
+                    chip.setTextColor(0xFF8A1C1C.toInt())
+                }
+
+                Quality.UNKNOWN -> {
+                    chip.setText(R.string.bs_quality_unknown)
+                    chip.background = pill(0xFFECECEC.toInt())
+                    chip.setTextColor(0xFF5F5F5F.toInt())
+                }
             }
 
             val pill = row.findViewById<View>(R.id.pill)
@@ -421,116 +519,7 @@ class ServerListActivity : AppCompatActivity() {
         }
     }
 
-    private fun formatMbps(value: Double): String {
-        return if (value < 0.1) "<0.1" else String.format(Locale.US, "%.1f", value)
-    }
-
-    // ---- Auto-pick -------------------------------------------------------
-
-    private val pickerUi = object : AutoPicker.Ui {
-        override fun onProgress(percent: Int, step: AutoPicker.Step, current: Int, total: Int) {
-            if (isDestroyed) return
-
-            barAuto.progress = percent
-            tvAutoPercent.text = "$percent%"
-
-            val text = when (step) {
-                AutoPicker.Step.CONNECTING -> R.string.bs_auto_step_connecting
-                AutoPicker.Step.MEASURING -> R.string.bs_auto_step_measuring
-                AutoPicker.Step.DISCONNECTING -> R.string.bs_auto_step_disconnecting
-            }
-            tvAutoStep.text = getString(text, current, total)
-        }
-
-        override fun onRowState(index: Int, state: Int, mbps: Double) {
-            if (isDestroyed || index !in rowStates.indices) return
-
-            rowStates[index] = state
-            rowSpeeds[index] = mbps
-            render()
-        }
-
-        override fun onFinished(bestIndex: Int) {
-            if (isDestroyed) return
-
-            cardAuto.visibility = View.GONE
-            updateNote()
-            render()
-
-            if (bestIndex < 0) {
-                Toast.makeText(this@ServerListActivity, R.string.bs_auto_none, Toast.LENGTH_LONG).show()
-                return
-            }
-
-            val best = servers[bestIndex]
-            Toast.makeText(
-                this@ServerListActivity,
-                getString(R.string.bs_auto_best, shortName(best.host), formatMbps(rowSpeeds[bestIndex]), results[bestIndex]),
-                Toast.LENGTH_LONG
-            ).show()
-
-            doChoose(best)
-        }
-
-        override fun onStopped() {
-            if (isDestroyed) return
-
-            cardAuto.visibility = View.GONE
-            updateNote()
-            render()
-        }
-    }
-
-    private fun startAuto() {
-        if (picker?.running == true || testing) return
-
-        if (vpnOn) {
-            Toast.makeText(this, R.string.bs_auto_disconnect_first, Toast.LENGTH_LONG).show()
-            return
-        }
-
-        if (VpnService.prepare(this) != null) {
-            Toast.makeText(this, R.string.bs_auto_need_permission, Toast.LENGTH_LONG).show()
-            return
-        }
-
-        // The servers that answered, lowest ping first: only these are worth a real speed measurement.
-        val candidates = servers.indices
-            .filter { results[it] > 0 }
-            .sortedBy { results[it] }
-            .take(AutoPicker.MAX_CANDIDATES)
-            .map { AutoPicker.Candidate(it, servers[it], results[it]) }
-
-        if (candidates.isEmpty()) return
-
-        rowStates.fill(AutoPicker.ROW_IDLE)
-        rowSpeeds.fill(0.0)
-
-        val newPicker = AutoPicker(this, pickerUi)
-        picker = newPicker
-
-        cardAuto.visibility = View.VISIBLE
-        barAuto.progress = 0
-        tvAutoPercent.text = "0%"
-        tvAutoStep.text = ""
-
-        newPicker.start(candidates)
-        updateNote()
-        render()
-    }
-
-    // The user may tap Connect while the run is going: stop it first, then continue with that server.
     private fun choose(server: FreeServer) {
-        val current = picker
-
-        if (current != null && current.running) {
-            current.cancel { doChoose(server) }
-        } else {
-            doChoose(server)
-        }
-    }
-
-    private fun doChoose(server: FreeServer) {
         generation++
         executor?.shutdownNow()
 
