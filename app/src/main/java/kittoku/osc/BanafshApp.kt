@@ -11,6 +11,7 @@ class BanafshApp : Application() {
         // The SoftEther module opens the home screen from its notifications and reports its state to the app.
         vn.unlimit.softether.SoftEtherVpnService.notificationTargetActivity = kittoku.osc.activity.MainActivity::class.java
         SoftEtherBridge.init(this)
+        L2tpBridge.init(this)
 
         // The app has one look only: dark.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)

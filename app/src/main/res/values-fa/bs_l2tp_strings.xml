@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_protocol_l2tp_desc">آزمایشی؛ ممکنه روی بعضی شبکه‌ها (مثل مخابرات) کار نکنه</string>
+    <string name="bs_l2tp_channel">وضعیت L2TP/IPsec</string>
+    <string name="bs_l2tp_connecting">در حال اتصال…</string>
+    <string name="bs_l2tp_connected">وصل است</string>
+    <string name="bs_l2tp_disconnect">قطع اتصال</string>
+    <string name="bs_l2tp_failed">اتصال L2TP/IPsec برقرار نشد: %1$s</string>
+</resources>

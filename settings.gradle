@@ -1,1 +1,1 @@
-include ':app', ':softether'
+include ':app', ':softether', ':l2tp-core'

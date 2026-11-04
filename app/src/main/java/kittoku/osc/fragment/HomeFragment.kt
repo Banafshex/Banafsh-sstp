@@ -102,7 +102,7 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs) && !ProtocolSwitch.isAnyRunning()) {
             setBooleanPrefValue(false, OscPrefKey.HOME_CONNECTOR, prefs)
             setStringPrefValue("", OscPrefKey.HOME_STATUS, prefs)
-            SoftEtherBridge.clearActive(requireContext())
+            ProtocolSwitch.clearActive(requireContext())
         }
 
         lastState = -1

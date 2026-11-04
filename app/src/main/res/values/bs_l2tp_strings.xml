@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bs_protocol_l2tp" translatable="false">L2TP/IPsec</string>
+    <string name="bs_protocol_l2tp_desc">Experimental; may not work on some networks (for example fixed-line ISPs)</string>
+    <string name="bs_l2tp_channel">L2TP/IPsec status</string>
+    <string name="bs_l2tp_connecting">Connecting…</string>
+    <string name="bs_l2tp_connected">Connected</string>
+    <string name="bs_l2tp_disconnect">Disconnect</string>
+    <string name="bs_l2tp_failed">L2TP/IPsec could not connect: %1$s</string>
+</resources>

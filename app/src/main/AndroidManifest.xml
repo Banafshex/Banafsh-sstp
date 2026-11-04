@@ -98,6 +98,16 @@
 
         <service
             android:exported="true"
+            android:foregroundServiceType="specialUse"
+            android:name=".l2tp.L2tpVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:exported="true"
             android:name=".service.SstpTileService"
             android:icon="@drawable/ic_baseline_vpn_lock_24"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
