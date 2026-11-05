@@ -1,7 +1,12 @@
 import base64
 import csv
 import json
+import concurrent.futures
+import os
+import socket
+import struct
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 
 API_URLS = [
@@ -15,6 +20,14 @@ DDNS_SUFFIX = ".opengw.net"
 LEGACY_FILE = "servers.json"
 OUTPUT_FILE = "servers_v2.json"
 LEGACY_SIZE = 60
+
+# The L2TP/IPsec list: only servers that answer an IKE message (UDP 500). VPN Gate's list does not say which
+# servers offer L2TP, and many volunteer servers do not. The app pings again from the phone.
+L2TP_FILE = "servers_l2tp.json"
+IKE_PORT = 500
+IKE_TIMEOUT = 2.5   # seconds to wait for each try
+IKE_TRIES = 2
+IKE_THREADS = 32
 
 # The numbers VPN Gate publishes (speed, ping, sessions) are measured from Japan, so this script
 # does not try to find the "best" server. It keeps every server that can work at all; the app groups
@@ -202,7 +215,7 @@ def load_previous(path):
         return []
 
 
-def merge_with_previous(fresh, previous, now):
+def merge_with_previous(fresh, previous, now, label=None):
     """VPN Gate's list changes all the time. Servers that just left it are kept for CARRY_HOURS:
     the app pings every server, so the dead ones simply show as not answering.
     Their session count is old, so it is set to 0 and the app shows their quality as unknown."""
@@ -237,7 +250,7 @@ def merge_with_previous(fresh, previous, now):
         carried += 1
 
     result = sorted(merged.values(), key=quality, reverse=True)[:POOL_SIZE]
-    print(f"Carried over from earlier refreshes: {carried}; total in {OUTPUT_FILE}: {len(result)}")
+    print(f"Carried over from earlier refreshes: {carried}; total in {label or OUTPUT_FILE}: {len(result)}")
     return result
 
 
@@ -258,6 +271,103 @@ def write_json(path, servers):
     print(f"Saved {len(servers)} servers to {path}")
 
 
+# ---- L2TP/IPsec list ------------------------------------------------------------------------
+
+def _attribute(kind, value):
+    return struct.pack(">HH", 0x8000 | kind, value)
+
+
+def _transform(number, encryption, key_length, hash_id, group, last):
+    attributes = (
+        _attribute(1, encryption)
+        + (_attribute(14, key_length) if key_length else b"")
+        + _attribute(2, hash_id)
+        + _attribute(4, group)
+        + _attribute(3, 1)        # pre-shared key
+        + _attribute(11, 1)       # life type: seconds
+        + _attribute(12, 28800)   # life duration
+    )
+    return struct.pack(">BBHBBH", 0 if last else 3, 0, 8 + len(attributes), number, 1, 0) + attributes
+
+
+def build_ike_message(cookie):
+    """IKEv1 Main Mode, first message: the SA proposals the app's tunnel uses. No key is exchanged."""
+    transforms = (
+        _transform(1, 7, 256, 2, 2, False)     # AES-256, SHA1, MODP-1024
+        + _transform(2, 5, None, 2, 2, False)  # 3DES, SHA1, MODP-1024
+        + _transform(3, 7, 256, 4, 14, True)   # AES-256, SHA-256, MODP-2048
+    )
+    proposal = struct.pack(">BBHBBBB", 0, 0, 8 + len(transforms), 1, 1, 0, 3) + transforms
+    sa = struct.pack(">BBHII", 0, 0, 4 + 8 + len(proposal), 1, 1) + proposal
+    header = cookie + bytes(8) + struct.pack(">BBBBII", 1, 0x10, 2, 0, 0, 28 + len(sa))
+    return header + sa
+
+
+def ike_probe(ip, port=None):
+    """Milliseconds until the server answers with an ISAKMP message, or None."""
+    port = port or IKE_PORT
+    cookie = os.urandom(8)
+    message = build_ike_message(cookie)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    try:
+        sock.connect((ip, port))
+
+        for _ in range(IKE_TRIES):
+            started = time.monotonic()
+            sock.send(message)
+
+            while True:
+                remaining = started + IKE_TIMEOUT - time.monotonic()
+                if remaining <= 0:
+                    break
+
+                sock.settimeout(remaining)
+                try:
+                    data = sock.recv(2048)
+                except socket.timeout:
+                    break
+                except OSError:
+                    return None  # for example "port unreachable": nothing listens there
+
+                if len(data) >= 28 and data[:8] == cookie:
+                    return max(1, int((time.monotonic() - started) * 1000))
+    except OSError:
+        return None
+    finally:
+        sock.close()
+
+    return None
+
+
+def build_l2tp_list(fresh, previous, now):
+    """Every candidate (this refresh's servers and the earlier L2TP list) is probed; the ones that answer stay."""
+    candidates = merge_with_previous(fresh, previous, now, label=L2TP_FILE + " candidates")
+
+    answers = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=IKE_THREADS) as pool:
+        futures = {pool.submit(ike_probe, s["ip"]): s for s in candidates}
+        for future in concurrent.futures.as_completed(futures):
+            ms = future.result()
+            if ms is not None:
+                answers[futures[future]["host"]] = ms
+
+    result = []
+    for s in candidates:
+        if s["host"] in answers:
+            entry = dict(s)
+            entry["ike_ms"] = answers[s["host"]]
+            result.append(entry)
+
+    per_country = {}
+    for s in result:
+        per_country[s["country"]] = per_country.get(s["country"], 0) + 1
+
+    print(f"L2TP: probed {len(candidates)} servers, {len(result)} answered IKE")
+    print("L2TP per country: " + ", ".join(f"{c} {n}" for c, n in sorted(per_country.items(), key=lambda x: -x[1])))
+    return result
+
+
 def main():
     fresh = parse_servers(fetch_csv_text())
     if not fresh:
@@ -272,6 +382,15 @@ def main():
     write_json(OUTPUT_FILE, full)
     write_json(LEGACY_FILE, legacy_list(fresh))
     stage_in_git(OUTPUT_FILE)
+
+    now = datetime.now(timezone.utc)
+    l2tp = build_l2tp_list(fresh, load_previous(L2TP_FILE), now)
+    if l2tp:
+        write_json(L2TP_FILE, l2tp)
+        stage_in_git(L2TP_FILE)
+    else:
+        # Probably this machine cannot send UDP: do not wipe the list that is there.
+        print(f"No server answered IKE: keeping the old {L2TP_FILE}")
 
 
 if __name__ == "__main__":
