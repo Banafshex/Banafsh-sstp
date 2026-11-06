@@ -25,6 +25,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import kittoku.osc.R
+import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.IkeProbe
 import kittoku.osc.Protocol
 import kittoku.osc.ProtocolSwitch
@@ -74,17 +75,6 @@ private fun qualityOf(server: FreeServer): Quality = when {
     shareOf(server) >= GOOD_SHARE -> Quality.GOOD
     shareOf(server) >= MEDIUM_SHARE -> Quality.MEDIUM
     else -> Quality.BAD
-}
-
-// Each service has its own list file. SSTP: the full list first; the short list that older
-// versions use stays as a fallback (for example before the first refresh that creates servers_v2.json).
-private fun listUrls(protocol: Protocol): List<String> {
-    val base = "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/"
-
-    return when (protocol) {
-        Protocol.L2TP -> listOf(base + "servers_l2tp.json")
-        Protocol.SSTP -> listOf(base + "servers_v2.json", base + "servers.json")
-    }
 }
 
 private const val PENDING = -2
@@ -448,6 +438,9 @@ class ServerListActivity : AppCompatActivity() {
         it.setColor(color)
     }
 
+    private fun currentHost(): String =
+        getStringPrefValue(OscPrefKey.HOME_HOSTNAME, PreferenceManager.getDefaultSharedPreferences(this))
+
     private fun render() {
         if (currentCountry == null) renderCountries() else renderServers()
     }
@@ -461,8 +454,18 @@ class ServerListActivity : AppCompatActivity() {
                 .thenBy { countryName(servers[it.value.first()]) }
         )
 
+        val currentHost = currentHost()
+
         for ((code, indices) in ordered) {
             val row = layoutInflater.inflate(R.layout.item_country, list, false)
+
+            // The country that holds the server in use is marked, so it is easy to find among the others.
+            if (currentHost.isNotEmpty() && indices.any { servers[it].host == currentHost }) {
+                row.findViewById<TextView>(R.id.tvCountryCurrent).apply {
+                    setText(R.string.bs_current_here)
+                    visibility = View.VISIBLE
+                }
+            }
 
             row.findViewById<TextView>(R.id.tvCountryTitle).text =
                 "${flagEmoji(code)} ${countryName(servers[indices.first()])}".trim()
@@ -480,8 +483,11 @@ class ServerListActivity : AppCompatActivity() {
 
         // Servers that answered come first: by quality tier (good first), inside a tier by the lowest ping.
         // The ones not answered yet follow by quality, and the ones that failed are last.
+        val currentHost = currentHost()
+
         val order = visible.sortedWith(
-            compareBy<Int> {
+            compareBy<Int> { if (servers[it].host == currentHost) 0 else 1 } // the server in use stays on top
+            .thenBy {
                 when {
                     results[it] > 0 -> 0
                     results[it] == PENDING -> 1
@@ -496,6 +502,7 @@ class ServerListActivity : AppCompatActivity() {
         val greyButton = 0xFFC9C2DD.toInt()
 
         val shown = if (showAll || order.size <= ROWS_LIMIT) order else order.take(ROWS_LIMIT)
+        val showPort = ProtocolSwitch.get(this) == Protocol.SSTP
 
         for (index in shown) {
             val server = servers[index]
@@ -504,6 +511,28 @@ class ServerListActivity : AppCompatActivity() {
 
             row.findViewById<TextView>(R.id.tvTitle).text =
                 "${flagEmoji(server.countryCode)} ${countryName(server)} · ${shortName(server.host)}".trim()
+
+            // The server in use is framed and tagged: the names look alike, so it is easy to pick it again by mistake.
+            val isCurrent = server.host == currentHost
+            val tvCurrent = row.findViewById<TextView>(R.id.tvCurrent)
+            val tvPort = row.findViewById<TextView>(R.id.tvPort)
+
+            if (isCurrent) {
+                row.background = getDrawable(R.drawable.bg_server_card_current)
+                tvCurrent.setText(R.string.bs_current_server)
+                tvCurrent.background = pill(0xFF8B5CF6.toInt())
+                tvCurrent.visibility = View.VISIBLE
+            }
+
+            // SSTP connects to the server's TCP port, so it is shown; L2TP does not use it.
+            if (showPort && server.port in 1..65535) {
+                tvPort.text = getString(R.string.bs_port_label, server.port)
+                tvPort.visibility = View.VISIBLE
+            }
+
+            if (isCurrent || showPort) {
+                row.findViewById<View>(R.id.rowMeta).visibility = View.VISIBLE
+            }
 
             // Quality: how much of the server's speed each user gets, from the list's own numbers.
             val chip = row.findViewById<TextView>(R.id.tvSpeed)

@@ -101,9 +101,16 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
     private val retryTask = Runnable {
         retryPending = false
 
-        appContext?.let {
-            if (!userStopped) begin(it)
+        val app = appContext ?: return@Runnable
+        if (userStopped) return@Runnable
+
+        if (ProtocolSwitch.get(app) != Protocol.L2TP) {
+            // The user chose another service while we were waiting: do not come back with this one.
+            finish(app, PreferenceManager.getDefaultSharedPreferences(app))
+            return@Runnable
         }
+
+        begin(app)
     }
 
     fun init(context: Context) {
@@ -347,12 +354,18 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
                 return
             }
 
-            if (lastFailureKind == TunnelErrorKind.IKE_NO_RESPONSE) {
-                Toast.makeText(app, R.string.bs_l2tp_no_response, Toast.LENGTH_LONG).show()
-            } else {
-                lastFailure?.let {
-                    Toast.makeText(app, app.getString(R.string.bs_l2tp_failed, it), Toast.LENGTH_LONG).show()
-                }
+            val failure = lastFailure.orEmpty()
+
+            when {
+                lastFailureKind == TunnelErrorKind.IKE_NO_RESPONSE ->
+                    Toast.makeText(app, R.string.bs_l2tp_no_response, Toast.LENGTH_LONG).show()
+
+                // The server accepted the login but refuses to hand out an address.
+                failure.contains("IPCP", ignoreCase = true) ->
+                    Toast.makeText(app, R.string.bs_l2tp_no_address, Toast.LENGTH_LONG).show()
+
+                failure.isNotEmpty() ->
+                    Toast.makeText(app, app.getString(R.string.bs_l2tp_failed, failure), Toast.LENGTH_LONG).show()
             }
         }
 

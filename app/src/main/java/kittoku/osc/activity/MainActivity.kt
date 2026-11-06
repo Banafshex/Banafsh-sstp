@@ -412,7 +412,6 @@ class MainActivity : AppCompatActivity() {
         uiPrefs.edit()
             .putString("server_host", server.host)
             .putString("server_country", server.countryCode)
-            .putString("server_list", ProtocolSwitch.get(this).listKey) // the list this server was picked from
             .apply()
         updatePreferenceView()
 
@@ -496,6 +495,7 @@ class MainActivity : AppCompatActivity() {
         uiPrefs.edit()
             .putString("server_host", server.host)
             .putString("server_country", server.countryCode)
+            .putString("server_list", ProtocolSwitch.get(this).listKey) // the list this server was picked from
             .apply()
         updatePreferenceView()
 
@@ -575,9 +575,8 @@ class MainActivity : AppCompatActivity() {
                     if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
                         // A running tunnel keeps its service; the new one starts with the next connection.
                         Toast.makeText(this, R.string.bs_protocol_next, Toast.LENGTH_LONG).show()
-                    } else if (!serverMatchesService()) {
-                        clearListServer()
-                        showChooseAgain()
+                    } else {
+                        verifyServerForService { }
                     }
                 }
             }
@@ -608,6 +607,39 @@ class MainActivity : AppCompatActivity() {
         updatePreferenceView()
     }
 
+    // The server was picked from the other service's list. Many servers are in both: look into the list of the
+    // selected service and only ask for a new server when this one is not there. [onSame] runs when it can stay.
+    private fun verifyServerForService(onSame: () -> Unit) {
+        if (serverMatchesService()) {
+            onSame()
+            return
+        }
+
+        val protocol = ProtocolSwitch.get(this)
+        val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
+
+        if (host.isEmpty()) {
+            onSame()
+            return
+        }
+
+        Thread {
+            val hosts = fetchServerHosts(protocol) // null: the list could not be loaded
+
+            runOnUiThread {
+                if (isFinishing || isDestroyed || ProtocolSwitch.get(this) != protocol) return@runOnUiThread
+
+                if (hosts != null && host in hosts) {
+                    uiPrefs.edit().putString("server_list", protocol.listKey).apply()
+                    onSame()
+                } else {
+                    clearListServer()
+                    showChooseAgain()
+                }
+            }
+        }.start()
+    }
+
     private fun showChooseAgain() {
         GlassDialog.show(
             this,
@@ -630,8 +662,7 @@ class MainActivity : AppCompatActivity() {
 
     internal fun connectNow() {
         if (!serverMatchesService()) {
-            clearListServer()
-            showChooseAgain()
+            verifyServerForService { connectNow() }
             return
         }
 
