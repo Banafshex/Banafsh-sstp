@@ -8,6 +8,9 @@ class BanafshApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // The app has one look: light.
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
+
         // The L2TP service reports its state to the bridge, which keeps the home screen in step.
         L2tpBridge.init(this)
         L2tpBridge.init(this)

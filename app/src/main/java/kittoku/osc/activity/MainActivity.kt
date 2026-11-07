@@ -170,6 +170,11 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
+        binding.toolbar.overflowIcon = ContextCompat.getDrawable(this, R.drawable.ic_bars)?.mutate()?.apply {
+            setTint(ContextCompat.getColor(this@MainActivity, R.color.bs_ink))
+        }
+        // The bottom bar opens the settings; this screen is the home.
+        binding.navSettings.setOnClickListener { openSettings() }
         // The picture runs under the status bar; its icons must stay readable in light and dark mode.
         val isNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                 android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -179,6 +184,11 @@ class MainActivity : AppCompatActivity() {
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
             view.setPadding(bars.left, 0, bars.right, bars.bottom)
+
+            // Keep the floating bottom bar above the system navigation bar.
+            (binding.navBar.layoutParams as android.widget.FrameLayout.LayoutParams).bottomMargin =
+                bars.bottom + (18 * resources.displayMetrics.density).toInt()
+            binding.navBar.requestLayout()
             insets
         }
 
@@ -255,11 +265,17 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    private fun openSettings() {
+        startActivity(
+            Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
+        )
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.open_settings -> startActivity(
-                Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
-            )
+            R.id.open_settings -> openSettings()
+
+            R.id.manual_server -> showServerDialog()
 
             R.id.check_update -> UpdateUi.checkNow(this, prefs)
 
@@ -442,9 +458,10 @@ class MainActivity : AppCompatActivity() {
         val host = data.getStringExtra(ServerListActivity.EXTRA_HOST).orEmpty()
         val port = data.getIntExtra(ServerListActivity.EXTRA_PORT, 443)
         val countryCode = data.getStringExtra(ServerListActivity.EXTRA_COUNTRY_CODE).orEmpty()
+        val ping = data.getIntExtra(ServerListActivity.EXTRA_PING, 0)
 
         if (host.isNotEmpty()) {
-            applyFreeServer(FreeServer(host, port, "", countryCode, 0.0, 0))
+            applyFreeServer(FreeServer(host, port, "", countryCode, 0.0, ping))
         }
     }
 
@@ -457,6 +474,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyServerSettings(host: String, port: Int, user: String, pass: String, disableVerify: Boolean): Boolean {
+        uiPrefs.edit().remove("server_ping").apply() // a server entered by hand has no measured ping
         val profile = try {
             val json = JSONObject(serializeProfile(prefs))
 
@@ -496,6 +514,7 @@ class MainActivity : AppCompatActivity() {
             .putString("server_host", server.host)
             .putString("server_country", server.countryCode)
             .putString("server_list", ProtocolSwitch.get(this).listKey) // the list this server was picked from
+            .putInt("server_ping", server.ping)
             .apply()
         updatePreferenceView()
 

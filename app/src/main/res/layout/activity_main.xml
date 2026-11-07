@@ -3,13 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bs_bg">
+    android:background="@drawable/bg_app">
 
-    <kittoku.osc.activity.NetworkView
-        android:id="@+id/networkView"
+    <!-- A soft green glow that fades in once the VPN is connected (no animation while idle). -->
+    <View
+        android:id="@+id/bgGlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:importantForAccessibility="no" />
+        android:alpha="0"
+        android:background="@drawable/bg_glow_connected"
+        android:clickable="false"
+        android:focusable="false" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -31,15 +35,45 @@
                 android:theme="@style/ThemeOverlay.BanafshHome"
                 app:popupTheme="@style/Theme.OpenSSTPClient.PopupOverlay">
 
-                <TextView
-                    android:id="@+id/tvTitle"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="@string/bs_title"
-                    android:textColor="@color/bs_title"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:layout_gravity="start|center_vertical"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_brand_badge">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_bolt" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="@string/bs_title"
+                        android:textColor="@color/bs_ink"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/bs_brand_vpn"
+                        android:textColor="@color/bs_aqua"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </com.google.android.material.appbar.MaterialToolbar>
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -48,5 +82,40 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
+    </LinearLayout>
+
+    <!-- Bottom bar: home (this screen) and settings. -->
+    <LinearLayout
+        android:id="@+id/navBar"
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="22dp"
+        android:background="@drawable/bg_nav_pill"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageView
+            android:id="@+id/navHome"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_nav_selected"
+            android:contentDescription="@string/bs_nav_home"
+            android:padding="11dp"
+            android:src="@drawable/ic_home"
+            app:tint="@color/bs_accent" />
+
+        <ImageView
+            android:id="@+id/navSettings"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/bs_nav_settings"
+            android:padding="11dp"
+            android:src="@drawable/ic_settings"
+            app:tint="@color/bs_ink_mute" />
     </LinearLayout>
 </FrameLayout>

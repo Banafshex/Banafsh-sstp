@@ -8,10 +8,13 @@ import android.animation.ValueAnimator
 import android.content.SharedPreferences
 import android.graphics.PorterDuff
 import android.content.Intent
+import android.net.TrafficStats
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
+import android.os.SystemClock
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
@@ -30,7 +33,6 @@ import kittoku.osc.ProtocolSwitch
 import kittoku.osc.R
 import kittoku.osc.activity.BypassAppsActivity
 import kittoku.osc.activity.MainActivity
-import kittoku.osc.activity.NetworkView
 import kittoku.osc.activity.UpdateUi
 import kittoku.osc.flagEmoji
 import kittoku.osc.preference.OscPrefKey
@@ -41,6 +43,7 @@ import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setStringPrefValue
 import kittoku.osc.service.SstpVpnService
 import kittoku.osc.service.PREF_WAITING_NETWORK
+import java.util.Locale
 
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var prefs: SharedPreferences
@@ -54,24 +57,23 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private var shortcuts: ShortcutsCard? = null
 
-    private fun network(): NetworkView? = activity?.findViewById(R.id.networkView)
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         uiPrefs = requireContext().getSharedPreferences("banafsh_ui", android.content.Context.MODE_PRIVATE)
-        network()?.anchor = view.findViewById(R.id.btnConnect)
         shortcuts = ShortcutsCard(this, view)
 
         view.findViewById<View>(R.id.btnConnect).setOnClickListener {
             (activity as? MainActivity)?.toggleConnection()
         }
-        view.findViewById<View>(R.id.cardServer).setOnClickListener {
-            (activity as? MainActivity)?.showServerDialog()
+        // A tap opens the server list; a long press (or the menu) enters a server by hand.
+        view.findViewById<View>(R.id.cardServer).apply {
+            setOnClickListener { (activity as? MainActivity)?.showFreeConfig() }
+            setOnLongClickListener {
+                (activity as? MainActivity)?.showServerDialog()
+                true
+            }
         }
-        view.findViewById<View>(R.id.btnFree).setOnClickListener {
-            (activity as? MainActivity)?.showFreeConfig()
-        }
-        view.findViewById<View>(R.id.btnProtocol).setOnClickListener {
+        view.findViewById<View>(R.id.cardProtocol).setOnClickListener {
             (activity as? MainActivity)?.showProtocolDialog()
         }
         view.findViewById<View>(R.id.btnManageApps).setOnClickListener {
@@ -105,7 +107,6 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         lastState = -1
-        network()?.setActive(true)
         shortcuts?.refresh()
         refresh()
     }
@@ -114,8 +115,8 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onStop()
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
         uiPrefs.unregisterOnSharedPreferenceChangeListener(listener)
-        network()?.setActive(false)
         stopAnimations()
+        stopSpeed()
     }
 
     private fun refresh() {
@@ -146,9 +147,9 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         }
 
-        val purple = ContextCompat.getColor(ctx, R.color.banafsh_purple)
-        val cyan = ContextCompat.getColor(ctx, R.color.banafsh_cyan)
-        val mute = ContextCompat.getColor(ctx, R.color.banafsh_mute)
+        val accent = ContextCompat.getColor(ctx, R.color.bs_accent)
+        val good = ContextCompat.getColor(ctx, R.color.bs_good)
+        val mute = ContextCompat.getColor(ctx, R.color.bs_ink_mute)
 
         v.findViewById<TextView>(R.id.tvStatus).setText(
             when (state) {
@@ -164,7 +165,7 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
                 else -> R.string.bs_hint_disconnected
             }
         )
-        v.findViewById<View>(R.id.dot).background.mutate().setTint(if (state == 0) mute else if (state == 1) purple else cyan)
+        v.findViewById<View>(R.id.dot).background.mutate().setTint(if (state == 0) mute else if (state == 1) accent else good)
 
         val btn = v.findViewById<View>(R.id.btnConnect)
         val label = v.findViewById<TextView>(R.id.tvConnect)
@@ -186,8 +187,9 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         v.findViewById<View>(R.id.ring).setBackgroundResource(
             if (state == 0) R.drawable.bg_ring else R.drawable.bg_ring_live
         )
-        label.setTextColor(0xFFF4F3FF.toInt())
-        icon.setColorFilter(if (state == 0) 0xFFC9B6FF.toInt() else cyan, PorterDuff.Mode.SRC_IN)
+        // Idle: a white button with a violet icon; connecting and connected: a coloured button with a white icon.
+        label.setTextColor(if (state == 0) accent else 0xFFFFFFFF.toInt())
+        icon.setColorFilter(if (state == 0) accent else 0xFFFFFFFF.toInt(), PorterDuff.Mode.SRC_IN)
         btn.contentDescription = label.text
 
         val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
@@ -200,24 +202,106 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             text = flag
             visibility = if (flag.isEmpty()) View.GONE else View.VISIBLE
         }
-        v.findViewById<TextView>(R.id.tvServerLabel).text =
-            getString(R.string.bs_server_address_protocol, getString(ProtocolSwitch.get(ctx).nameRes))
-        v.findViewById<TextView>(R.id.tvAddress).text =
-            if (host.isEmpty()) getString(R.string.bs_no_server) else "$host:$port"
+
+        val protocol = ProtocolSwitch.get(ctx)
+
+        // L2TP does not use the server's TCP port: only SSTP shows it.
+        v.findViewById<TextView>(R.id.tvAddress).text = when {
+            host.isEmpty() -> getString(R.string.bs_no_server)
+            protocol == Protocol.SSTP -> "$host:$port"
+            else -> host
+        }
+
+        // The ping measured in the server list when this server was picked.
+        val ping = if (host.isNotEmpty() && ui.getString("server_host", "") == host) ui.getInt("server_ping", 0) else 0
+        v.findViewById<TextView>(R.id.tvPing).apply {
+            if (ping > 0) {
+                text = getString(R.string.bs_ping_ms, ping)
+                visibility = View.VISIBLE
+            } else {
+                visibility = View.GONE
+            }
+        }
+
+        v.findViewById<TextView>(R.id.tvProtocol).text = protocol.id.uppercase()
 
         if (state != lastState) {
-            val previous = lastState
             lastState = state
             stopAnimations()
             if (state == 1) startConnecting()
-            network()?.setMode(
-                when (state) {
-                    1 -> NetworkView.Mode.CONNECTING
-                    2 -> NetworkView.Mode.CONNECTED
-                    else -> NetworkView.Mode.IDLE
-                },
-                celebrate = state == 2 && previous == 1
-            )
+
+            // Only the change of state moves anything: a soft glow fades in when connected and out otherwise.
+            activity?.findViewById<View>(R.id.bgGlow)?.animate()
+                ?.alpha(if (state == 2) 1f else 0f)
+                ?.setDuration(700)
+                ?.start()
+
+            if (state == 2) startSpeed() else stopSpeed()
+        }
+    }
+
+    // ---- live speed -----------------------------------------------------------------------------
+    // The app's own traffic is what the tunnel carries (plus its small overhead), so it tracks the real speed.
+
+    private val speedHandler = Handler(Looper.getMainLooper())
+    private var lastRx = 0L
+    private var lastTx = 0L
+    private var lastAt = 0L
+
+    private val speedTask = object : Runnable {
+        override fun run() {
+            sampleSpeed()
+            speedHandler.postDelayed(this, 1000L)
+        }
+    }
+
+    private fun startSpeed() {
+        stopSpeed()
+
+        val uid = Process.myUid()
+        lastRx = TrafficStats.getUidRxBytes(uid)
+        lastTx = TrafficStats.getUidTxBytes(uid)
+        lastAt = SystemClock.elapsedRealtime()
+
+        showSpeed(0.0, 0.0)
+        speedHandler.postDelayed(speedTask, 1000L)
+    }
+
+    private fun stopSpeed() {
+        speedHandler.removeCallbacks(speedTask)
+        view?.findViewById<TextView>(R.id.tvDown)?.text = getString(R.string.bs_speed_none)
+        view?.findViewById<TextView>(R.id.tvUp)?.text = getString(R.string.bs_speed_none)
+    }
+
+    private fun sampleSpeed() {
+        val uid = Process.myUid()
+        val rx = TrafficStats.getUidRxBytes(uid)
+        val tx = TrafficStats.getUidTxBytes(uid)
+        val now = SystemClock.elapsedRealtime()
+        val seconds = (now - lastAt) / 1000.0
+
+        if (rx == TrafficStats.UNSUPPORTED.toLong() || tx == TrafficStats.UNSUPPORTED.toLong() || seconds <= 0.0) {
+            stopSpeed()
+            return
+        }
+
+        showSpeed(((rx - lastRx) / seconds).coerceAtLeast(0.0), ((tx - lastTx) / seconds).coerceAtLeast(0.0))
+
+        lastRx = rx
+        lastTx = tx
+        lastAt = now
+    }
+
+    private fun showSpeed(down: Double, up: Double) {
+        view?.findViewById<TextView>(R.id.tvDown)?.text = formatSpeed(down)
+        view?.findViewById<TextView>(R.id.tvUp)?.text = formatSpeed(up)
+    }
+
+    private fun formatSpeed(bytesPerSecond: Double): String {
+        return if (bytesPerSecond >= 1024 * 1024) {
+            String.format(Locale.US, "%.1f MB/s", bytesPerSecond / (1024 * 1024))
+        } else {
+            String.format(Locale.US, "%d KB/s", (bytesPerSecond / 1024).toInt())
         }
     }
 

@@ -97,6 +97,7 @@ class ServerListActivity : AppCompatActivity() {
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
         const val EXTRA_COUNTRY_CODE = "country_code"
+        const val EXTRA_PING = "ping"
     }
 
     private var servers: List<FreeServer> = emptyList()
@@ -637,6 +638,7 @@ class ServerListActivity : AppCompatActivity() {
                 .putExtra(EXTRA_HOST, server.host)
                 .putExtra(EXTRA_PORT, server.port)
                 .putExtra(EXTRA_COUNTRY_CODE, server.countryCode)
+                .putExtra(EXTRA_PING, servers.indexOf(server).let { if (it >= 0 && results[it] > 0) results[it] else 0 })
         )
         finish()
     }
