@@ -4,7 +4,6 @@
     <string name="bs_speed_down">Download</string>
     <string name="bs_speed_up">Upload</string>
     <string name="bs_service_label">Service</string>
-    <string name="bs_ping_ms">%1$d ms</string>
     <string name="bs_nav_home">Home</string>
     <string name="bs_nav_settings">Settings</string>
     <string name="bs_menu_manual_server">Enter a server manually</string>
