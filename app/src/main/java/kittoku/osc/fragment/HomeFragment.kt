@@ -29,6 +29,7 @@ import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsItem
+import kittoku.osc.Protocol
 import kittoku.osc.ProtocolSwitch
 import kittoku.osc.R
 import kittoku.osc.activity.BypassAppsActivity
