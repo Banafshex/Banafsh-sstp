@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bs_dialog_bg">#EBFFFFFF</color>
-    <color name="bs_dialog_stroke">#666D28D9</color>
-    <color name="bs_dialog_text">#2A1D4A</color>
-    <color name="bs_dialog_muted">#54437F</color>
+    <color name="bs_dialog_bg">#F5FFFFFF</color>
+    <color name="bs_dialog_stroke">#66A78BFA</color>
+    <color name="bs_dialog_text">#2D264B</color>
+    <color name="bs_dialog_muted">#5F587F</color>
     <color name="bs_dialog_link">#7C3AED</color>
     <color name="bs_dialog_icon_bg">#1F7C3AED</color>
-    <color name="bs_title">#2A1D4A</color>
+    <color name="bs_title">#2D264B</color>
 
     <style name="BsGlassDialog" parent="Theme.MaterialComponents.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>

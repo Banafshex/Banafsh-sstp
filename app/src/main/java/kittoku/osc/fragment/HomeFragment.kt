@@ -345,8 +345,8 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         } else if (state == 2) {
             ObjectAnimator.ofPropertyValuesHolder(
                 ring,
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.06f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.06f),
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.04f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.04f),
                 PropertyValuesHolder.ofFloat(View.ALPHA, 0.7f, 1f)
             ).apply {
                 duration = 2000
