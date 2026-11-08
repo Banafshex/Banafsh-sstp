@@ -3,7 +3,7 @@
     android:id="@+id/qrRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/qr_bg">
+    android:background="@drawable/bg_app">
 
     <ScrollView
         android:layout_width="match_parent"

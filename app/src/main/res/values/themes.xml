@@ -2,13 +2,19 @@
 
     <!-- Base application theme. -->
     <style name="Theme.OpenSSTPClient" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/banafsh_purple</item>
+        <item name="colorPrimary">@color/bs_accent</item>
         <item name="colorPrimaryVariant">@color/banafsh_purple_dark</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/banafsh_cyan</item>
-        <item name="colorSecondaryVariant">@color/banafsh_cyan</item>
-        <item name="colorOnSecondary">@color/banafsh_ink</item>
+        <item name="colorSecondary">@color/bs_aqua</item>
+        <item name="colorSecondaryVariant">@color/bs_aqua</item>
+        <item name="colorOnSecondary">@color/white</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@drawable/bg_app</item>
+        <item name="android:textColorPrimary">@color/bs_ink</item>
+        <item name="android:textColorSecondary">@color/bs_ink_soft</item>
+        <item name="actionBarStyle">@style/BsActionBar</item>
+        <item name="actionBarTheme">@style/ThemeOverlay.BanafshHome</item>
         <item name="android:fontFamily">@font/vazirmatn</item>
         <item name="fontFamily">@font/vazirmatn</item>
         <item name="textAppearanceButton">@style/TextAppearance.Banafsh.Button</item>
@@ -20,7 +26,20 @@
         <item name="textAppearanceCaption">@style/TextAppearance.Banafsh.Caption</item>
     </style>
 
-    <!-- Used by MainActivity: it draws its own purple toolbar. -->
+    <!-- The settings screens keep the system action bar: transparent, with dark title and icons. -->
+    <style name="BsActionBar" parent="Widget.MaterialComponents.ActionBar.Solid">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="background">@android:color/transparent</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextStyle">@style/BsActionBarTitle</item>
+    </style>
+
+    <style name="BsActionBarTitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/bs_ink</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Used by MainActivity: it draws its own toolbar. -->
     <style name="Theme.OpenSSTPClient.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>

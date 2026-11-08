@@ -32,7 +32,7 @@ class QrSendActivity : AppCompatActivity() {
         setContentView(R.layout.activity_qr_send)
 
         val root = findViewById<View>(R.id.qrRoot)
-        WindowCompat.getInsetsController(window, root).isAppearanceLightStatusBars = false
+        WindowCompat.getInsetsController(window, root).isAppearanceLightStatusBars = true
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
