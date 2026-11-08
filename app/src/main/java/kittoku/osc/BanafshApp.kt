@@ -13,10 +13,6 @@ class BanafshApp : Application() {
 
         // The L2TP service reports its state to the bridge, which keeps the home screen in step.
         L2tpBridge.init(this)
-        L2tpBridge.init(this)
-
-        // The app has one look only: dark.
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
         // Persian is the default language until the user picks another one.
         // The locale is set only when it differs, so a restart does not trigger a pointless reload.

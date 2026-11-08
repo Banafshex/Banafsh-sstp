@@ -7,4 +7,6 @@
     <color name="bs_accent_soft">#A78BFA</color>
     <color name="bs_good">#10B981</color>
     <color name="bs_aqua">#06B6D4</color>
+    <color name="bs_card_fill">#B8FFFFFF</color>
+    <color name="bs_card_stroke">#99FFFFFF</color>
 </resources>

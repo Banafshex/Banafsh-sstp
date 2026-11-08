@@ -83,39 +83,4 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
     </LinearLayout>
-
-    <!-- Bottom bar: home (this screen) and settings. -->
-    <LinearLayout
-        android:id="@+id/navBar"
-        android:layout_width="wrap_content"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="22dp"
-        android:background="@drawable/bg_nav_pill"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
-
-        <ImageView
-            android:id="@+id/navHome"
-            android:layout_width="48dp"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_nav_selected"
-            android:contentDescription="@string/bs_nav_home"
-            android:padding="11dp"
-            android:src="@drawable/ic_home"
-            app:tint="@color/bs_accent" />
-
-        <ImageView
-            android:id="@+id/navSettings"
-            android:layout_width="48dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/bs_nav_settings"
-            android:padding="11dp"
-            android:src="@drawable/ic_settings"
-            app:tint="@color/bs_ink_mute" />
-    </LinearLayout>
 </FrameLayout>

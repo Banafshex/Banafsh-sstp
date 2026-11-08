@@ -129,7 +129,7 @@ class ServerListActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         title = getString(R.string.bs_servers_title)
 
-        WindowCompat.getInsetsController(window, toolbar).isAppearanceLightStatusBars = false
+        WindowCompat.getInsetsController(window, toolbar).isAppearanceLightStatusBars = true
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.body)) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()

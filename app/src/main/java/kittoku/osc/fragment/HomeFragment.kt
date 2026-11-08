@@ -16,6 +16,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
@@ -150,6 +151,8 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
 
         val accent = ContextCompat.getColor(ctx, R.color.bs_accent)
         val good = ContextCompat.getColor(ctx, R.color.bs_good)
+        val aqua = ContextCompat.getColor(ctx, R.color.bs_aqua)
+        val accentSoft = ContextCompat.getColor(ctx, R.color.bs_accent_soft)
         val mute = ContextCompat.getColor(ctx, R.color.bs_ink_mute)
 
         v.findViewById<TextView>(R.id.tvStatus).setText(
@@ -186,11 +189,20 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             }
         )
         v.findViewById<View>(R.id.ring).setBackgroundResource(
-            if (state == 0) R.drawable.bg_ring else R.drawable.bg_ring_live
+            when (state) {
+                2 -> R.drawable.bg_ring_live
+                1 -> R.drawable.bg_ring_connecting
+                else -> R.drawable.bg_ring
+            }
         )
-        // Idle: a white button with a violet icon; connecting and connected: a coloured button with a white icon.
-        label.setTextColor(if (state == 0) accent else 0xFFFFFFFF.toInt())
-        icon.setColorFilter(if (state == 0) accent else 0xFFFFFFFF.toInt(), PorterDuff.Mode.SRC_IN)
+        // Violet when idle, light violet while connecting, aqua when connected.
+        val tone = when (state) {
+            2 -> aqua
+            1 -> accentSoft
+            else -> accent
+        }
+        label.setTextColor(tone)
+        icon.setColorFilter(tone, PorterDuff.Mode.SRC_IN)
         btn.contentDescription = label.text
 
         val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
@@ -229,7 +241,9 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         if (state != lastState) {
             lastState = state
             stopAnimations()
-            if (state == 1) startConnecting()
+            if (state != 0) startRingAnimation(state)
+
+            v.findViewById<View>(R.id.speedPanel).visibility = if (state == 2) View.VISIBLE else View.INVISIBLE
 
             // Only the change of state moves anything: a soft glow fades in when connected and out otherwise.
             activity?.findViewById<View>(R.id.bgGlow)?.animate()
@@ -306,22 +320,39 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    // While connecting, two thin waves leave the button and fade out before they reach the outer ring.
-    private fun startConnecting() {
+    // Connecting: the dashed ring turns and the icon blinks. Connected: the solid ring breathes slowly.
+    // They run only while this screen is in front.
+    private fun startRingAnimation(state: Int) {
         val v = view ?: return
-        listOf(R.id.wave1 to 0L, R.id.wave2 to 900L).forEach { (id, delay) ->
-            val wave = v.findViewById<View>(id)
-            wave.alpha = 0f
-            ObjectAnimator.ofPropertyValuesHolder(
-                wave,
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.36f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.36f),
-                PropertyValuesHolder.ofFloat(View.ALPHA, 0.6f, 0f)
-            ).apply {
-                duration = 1800
-                startDelay = delay
+        val ring = v.findViewById<View>(R.id.ring)
+        val icon = v.findViewById<View>(R.id.ivPower)
+
+        if (state == 1) {
+            ObjectAnimator.ofFloat(ring, View.ROTATION, 0f, 360f).apply {
+                duration = 3000
                 repeatCount = ValueAnimator.INFINITE
                 interpolator = LinearInterpolator()
+                start()
+                anims.add(this)
+            }
+            ObjectAnimator.ofFloat(icon, View.ALPHA, 0.5f, 1f).apply {
+                duration = 800
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.REVERSE
+                start()
+                anims.add(this)
+            }
+        } else if (state == 2) {
+            ObjectAnimator.ofPropertyValuesHolder(
+                ring,
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.06f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.06f),
+                PropertyValuesHolder.ofFloat(View.ALPHA, 0.7f, 1f)
+            ).apply {
+                duration = 2000
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.REVERSE
+                interpolator = AccelerateDecelerateInterpolator()
                 start()
                 anims.add(this)
             }
@@ -331,12 +362,13 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun stopAnimations() {
         anims.forEach { it.cancel() }
         anims.clear()
-        listOf(R.id.wave1, R.id.wave2).forEach { id ->
-            view?.findViewById<View>(id)?.apply {
-                scaleX = 1f
-                scaleY = 1f
-                alpha = 0f
-            }
+
+        view?.findViewById<View>(R.id.ring)?.apply {
+            rotation = 0f
+            scaleX = 1f
+            scaleY = 1f
+            alpha = 1f
         }
+        view?.findViewById<View>(R.id.ivPower)?.alpha = 1f
     }
 }

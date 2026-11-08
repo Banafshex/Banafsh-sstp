@@ -173,22 +173,16 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.overflowIcon = ContextCompat.getDrawable(this, R.drawable.ic_bars)?.mutate()?.apply {
             setTint(ContextCompat.getColor(this@MainActivity, R.color.bs_ink))
         }
-        // The bottom bar opens the settings; this screen is the home.
-        binding.navSettings.setOnClickListener { openSettings() }
-        // The picture runs under the status bar; its icons must stay readable in light and dark mode.
-        val isNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                android.content.res.Configuration.UI_MODE_NIGHT_YES
-        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = !isNight
+        // The background is light: dark icons in the status bar and the navigation bar.
+        WindowCompat.getInsetsController(window, binding.root).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
         ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
             view.setPadding(bars.left, 0, bars.right, bars.bottom)
-
-            // Keep the floating bottom bar above the system navigation bar.
-            (binding.navBar.layoutParams as android.widget.FrameLayout.LayoutParams).bottomMargin =
-                bars.bottom + (18 * resources.displayMetrics.density).toInt()
-            binding.navBar.requestLayout()
             insets
         }
 
