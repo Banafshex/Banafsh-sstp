@@ -215,7 +215,8 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
 
         try {
             val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
-            val routes = routes(app, prefs)
+            val spec = routeSpec(app, prefs)
+            L2tpVpnService.routeSpec = spec
             val excluded = excludedApps(prefs)
             val proposal = L2tpProposals.all[proposalIndex]
             val dns = if (getBooleanPrefValue(OscPrefKey.DNS_DO_USE_CUSTOM_SERVER, prefs)) {
@@ -224,7 +225,7 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
 
             log(
                 "Attempt $attempt: $host, user=vpn, algorithms: ${proposal.name} (set ${proposalIndex + 1} of ${L2tpProposals.all.size}), " +
-                    "routes=${routes.size}, bypassApps=${excluded.size}, dns=${dns.ifEmpty { "(from the server)" }}"
+                    "routes=${spec.routes.size}, excludedRoutes=${spec.excludedRoutes.size}, bypassApps=${excluded.size}, dns=${dns.ifEmpty { "(from the server)" }}"
             )
 
             ContextCompat.startForegroundService(
@@ -237,7 +238,6 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
                     .putExtra(L2tpVpnService.EXTRA_PSK, VPN_GATE_SECRET)
                     .putExtra(L2tpVpnService.EXTRA_PROPOSAL, proposalIndex)
                     .putExtra(L2tpVpnService.EXTRA_DNS, dns)
-                    .putExtra(L2tpVpnService.EXTRA_ROUTES, routes.toTypedArray())
                     .putExtra(L2tpVpnService.EXTRA_EXCLUDED_APPS, excluded.toTypedArray())
             )
         } catch (e: Exception) {
@@ -416,19 +416,26 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
         return packages.toList()
     }
 
-    // "Iranian sites connect directly" switch: route everything except those ranges. Empty means everything.
-    private fun routes(app: Context, prefs: SharedPreferences): List<String> {
-        if (!prefs.getBoolean(IranRanges.KEY_ENABLED, false)) return emptyList()
+    // "Iranian sites connect directly" switch. Android 13 and newer: the ranges are excluded from one default
+    // route (like SSTP does). Older Android: everything except the ranges is routed. Empty: everything.
+    private fun routeSpec(app: Context, prefs: SharedPreferences): L2tpVpnService.RouteSpec {
+        if (!prefs.getBoolean(IranRanges.KEY_ENABLED, false)) return L2tpVpnService.RouteSpec()
 
         val ranges = IranRanges.load(app)
-        if (ranges.isEmpty()) return emptyList()
+        if (ranges.isEmpty()) return L2tpVpnService.RouteSpec()
 
         return try {
-            val routes = IranRanges.complementCidrs(ranges)
-            if (routes.size > IranRanges.MAX_ROUTES) emptyList()
-            else routes.map { (address, length) -> "${IranRanges.format(address)}/$length" }
+            if (Build.VERSION.SDK_INT >= 33) {
+                val excluded = IranRanges.toCidrs(ranges)
+                if (excluded.size > IranRanges.MAX_ROUTES) L2tpVpnService.RouteSpec()
+                else L2tpVpnService.RouteSpec(excludedRoutes = excluded.map { (a, l) -> "${IranRanges.format(a)}/$l" })
+            } else {
+                val routes = IranRanges.complementCidrs(ranges)
+                if (routes.size > IranRanges.MAX_ROUTES) L2tpVpnService.RouteSpec()
+                else L2tpVpnService.RouteSpec(routes = routes.map { (a, l) -> "${IranRanges.format(a)}/$l" })
+            }
         } catch (_: Exception) {
-            emptyList()
+            L2tpVpnService.RouteSpec()
         }
     }
 
