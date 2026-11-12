@@ -240,9 +240,10 @@
                             android:id="@+id/tvServerLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/bs_server_address"
-                            android:textColor="@color/bs_ink_mute"
-                            android:textSize="10sp" />
+                            android:text="@string/bs_choose_server"
+                            android:textColor="@color/bs_ink_soft"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -267,15 +268,19 @@
                                 android:singleLine="true"
                                 android:textColor="@color/bs_ink"
                                 android:textDirection="ltr"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
+                                android:textSize="13sp" />
                         </LinearLayout>
 
                         <TextView
                             android:id="@+id/tvPing"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
+                            android:layout_marginTop="5dp"
+                            android:background="@drawable/bg_chip"
+                            android:paddingStart="10dp"
+                            android:paddingTop="2dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="2dp"
                             android:textColor="@color/bs_accent"
                             android:textSize="11sp"
                             android:textStyle="bold"
@@ -324,16 +329,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:text="@string/bs_service_label"
-                        android:textColor="@color/bs_ink_mute"
-                        android:textSize="10sp" />
+                        android:textColor="@color/bs_ink_soft"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvProtocol"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/bs_ink"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
@@ -403,15 +408,21 @@
                         android:id="@+id/btnManageApps"
                         style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="30dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="6dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
-                        android:paddingStart="0dp"
-                        android:paddingEnd="0dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
                         android:text="@string/bs_nv_apps_manage"
                         android:textColor="@color/bs_accent"
-                        android:textSize="12sp" />
+                        android:textSize="11sp"
+                        app:backgroundTint="#1F7C3AED"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="#407C3AED"
+                        app:strokeWidth="1dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -470,7 +481,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:paddingStart="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="4dp"
                         android:text="@string/bs_nv_sites_tag"
                         android:textColor="@color/bs_accent"
                         android:textSize="11sp"
@@ -518,13 +534,19 @@
                         android:id="@+id/btnEditShortcuts"
                         style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="34dp"
+                        android:layout_height="30dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
                         android:text="@string/bs_sc_edit"
                         android:textColor="@color/bs_accent"
-                        android:textSize="12sp" />
+                        android:textSize="11sp"
+                        app:backgroundTint="#1F7C3AED"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="#407C3AED"
+                        app:strokeWidth="1dp" />
                 </LinearLayout>
 
                 <LinearLayout

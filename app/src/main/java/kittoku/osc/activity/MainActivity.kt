@@ -48,6 +48,7 @@ import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsNotifier
+import kittoku.osc.DnsDialog
 import kittoku.osc.Protocol
 import kittoku.osc.ProtocolSwitch
 import kittoku.osc.SharedServer
@@ -224,7 +225,11 @@ class MainActivity : AppCompatActivity() {
 
             var infoShown = true
 
-            if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
+            if (!uiPrefs.getBoolean(OnboardingActivity.KEY_DONE, false)) {
+                // First launch: a short intro (it can be skipped) instead of the old welcome dialog.
+                uiPrefs.edit().putBoolean(KEY_HIDE_WELCOME, true).apply()
+                startActivity(Intent(this, OnboardingActivity::class.java))
+            } else if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
                 showWelcomeDialog(this)
             } else if (lastSeen != BuildConfig.VERSION_NAME) {
                 showWhatsNewDialog(this)
@@ -270,6 +275,8 @@ class MainActivity : AppCompatActivity() {
             R.id.open_settings -> openSettings()
 
             R.id.manual_server -> showServerDialog()
+
+            R.id.dns_settings -> DnsDialog.show(this)
 
             R.id.check_update -> UpdateUi.checkNow(this, prefs)
 

@@ -96,6 +96,11 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name=".activity.OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenSSTPClient.NoActionBar" />
+
         <service
             android:exported="true"
             android:foregroundServiceType="specialUse"

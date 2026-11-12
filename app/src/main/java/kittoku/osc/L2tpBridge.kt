@@ -219,9 +219,7 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
             L2tpVpnService.routeSpec = spec
             val excluded = excludedApps(prefs)
             val proposal = L2tpProposals.all[proposalIndex]
-            val dns = if (getBooleanPrefValue(OscPrefKey.DNS_DO_USE_CUSTOM_SERVER, prefs)) {
-                getStringPrefValue(OscPrefKey.DNS_CUSTOM_ADDRESS, prefs).trim()
-            } else ""
+            val dns = DnsPresets.addresses(prefs).joinToString(",")
 
             log(
                 "Attempt $attempt: $host, user=vpn, algorithms: ${proposal.name} (set ${proposalIndex + 1} of ${L2tpProposals.all.size}), " +

@@ -154,7 +154,8 @@ def parse_servers(csv_text):
             continue
 
         port, udp_port = ports_from_config(row[14])
-        if port is None:
+        port_guessed = port is None
+        if port_guessed:
             no_tcp_port += 1
             port = DEFAULT_PORT  # a guess: the app's ping test shows whether it answers
 
@@ -173,6 +174,7 @@ def parse_servers(csv_text):
             "host": host_name + DDNS_SUFFIX,
             "ip": row[1].strip(),
             "port": port,
+            "port_guessed": port_guessed,
             "udp_port": udp_port or 0,
             "country": country_code,
             "country_name": row[5].strip(),
@@ -343,6 +345,11 @@ def ike_probe(ip, port=None):
 def build_l2tp_list(fresh, previous, now):
     """Every candidate (this refresh's servers and the earlier L2TP list) is probed; the ones that answer stay."""
     candidates = merge_with_previous(fresh, previous, now, label=L2TP_FILE + " candidates")
+
+    # Only servers whose TCP port is 443 ever answered L2TP: the others are not even probed.
+    before = len(candidates)
+    candidates = [s for s in candidates if s["port"] == 443]
+    print(f"L2TP: {len(candidates)} of {before} candidates have TCP port 443")
 
     answers = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=IKE_THREADS) as pool:

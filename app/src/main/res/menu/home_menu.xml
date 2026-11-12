@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/dns_settings"
+        android:title="@string/bs_menu_dns"
+        android:showAsAction="never" />
+    <item
         android:id="@+id/manual_server"
         android:title="@string/bs_menu_manual_server"
         android:showAsAction="never" />

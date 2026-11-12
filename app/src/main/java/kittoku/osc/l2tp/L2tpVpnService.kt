@@ -189,7 +189,7 @@ class L2tpVpnService : VpnService() {
     private fun startWorker(intent: Intent) {
         val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
         val proposal = L2tpProposals.all[intent.getIntExtra(EXTRA_PROPOSAL, 0).coerceIn(0, L2tpProposals.all.size - 1)]
-        val dns = intent.getStringExtra(EXTRA_DNS).orEmpty().trim()
+        val dns = intent.getStringExtra(EXTRA_DNS).orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
         val config = try {
             VpnConfig(
@@ -199,7 +199,7 @@ class L2tpVpnService : VpnService() {
                 password = intent.getStringExtra(EXTRA_PASSWORD).orEmpty(),
                 phase1 = proposal.phase1,
                 phase2 = proposal.phase2,
-                dnsOverride = if (dns.isNotEmpty()) listOf(dns) else emptyList(),
+                dnsOverride = dns,
                 connectTimeoutMs = 15_000,
             )
         } catch (e: IllegalArgumentException) {
