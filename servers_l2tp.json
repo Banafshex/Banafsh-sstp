@@ -16,7 +16,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 141
+    "ike_ms": 149
   },
   {
     "host_name": "public-vpn-186",
@@ -35,7 +35,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 157
+    "ike_ms": 159
   },
   {
     "host_name": "public-vpn-182",
@@ -54,7 +54,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 140
+    "ike_ms": 156
   },
   {
     "host_name": "public-vpn-198",
@@ -73,7 +73,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 135
+    "ike_ms": 158
   },
   {
     "host_name": "public-vpn-257",
@@ -92,7 +92,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 151
   },
   {
     "host_name": "opengw",
@@ -111,7 +111,7 @@
     "operator": "Japan VPN",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 137
+    "ike_ms": 164
   },
   {
     "host_name": "public-vpn-85",
@@ -130,7 +130,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 137
+    "ike_ms": 156
   },
   {
     "host_name": "public-vpn-196",
@@ -149,7 +149,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 140
+    "ike_ms": 157
   },
   {
     "host_name": "public-vpn-185",
@@ -168,7 +168,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 135
+    "ike_ms": 152
   },
   {
     "host_name": "public-vpn-71",
@@ -187,7 +187,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 138
+    "ike_ms": 157
   },
   {
     "host_name": "public-vpn-133",
@@ -206,26 +206,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 136
-  },
-  {
-    "host_name": "public-vpn-40",
-    "host": "public-vpn-40.opengw.net",
-    "ip": "219.100.37.4",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 223.83,
-    "ping": 13,
-    "sessions": 0,
-    "score": 1872379,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 138
+    "ike_ms": 162
   },
   {
     "host_name": "vpn118469396",
@@ -244,7 +225,7 @@
     "operator": "BG VPN",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 142
+    "ike_ms": 134
   },
   {
     "host_name": "public-vpn-160",
@@ -263,26 +244,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 171
-  },
-  {
-    "host_name": "public-vpn-213",
-    "host": "public-vpn-213.opengw.net",
-    "ip": "219.100.37.200",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 211.44,
-    "ping": 15,
-    "sessions": 0,
-    "score": 2638210,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 137
+    "ike_ms": 149
   },
   {
     "host_name": "public-vpn-235",
@@ -301,7 +263,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 155
   },
   {
     "host_name": "public-vpn-81",
@@ -320,7 +282,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 141
+    "ike_ms": 154
   },
   {
     "host_name": "public-vpn-192",
@@ -339,26 +301,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 184
-  },
-  {
-    "host_name": "public-vpn-255",
-    "host": "public-vpn-255.opengw.net",
-    "ip": "219.100.37.224",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 204.96,
-    "ping": 13,
-    "sessions": 0,
-    "score": 1725518,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 140
+    "ike_ms": 336
   },
   {
     "host_name": "public-vpn-113",
@@ -377,7 +320,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 153
   },
   {
     "host_name": "public-vpn-219",
@@ -396,26 +339,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 141
-  },
-  {
-    "host_name": "public-vpn-124",
-    "host": "public-vpn-124.opengw.net",
-    "ip": "219.100.37.102",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 198.03,
-    "ping": 17,
-    "sessions": 0,
-    "score": 2426009,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 137
+    "ike_ms": 155
   },
   {
     "host_name": "public-vpn-147",
@@ -434,7 +358,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 150
   },
   {
     "host_name": "public-vpn-53",
@@ -453,7 +377,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 134
+    "ike_ms": 154
   },
   {
     "host_name": "public-vpn-138",
@@ -472,7 +396,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 135
+    "ike_ms": 162
   },
   {
     "host_name": "public-vpn-98",
@@ -491,45 +415,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 140
-  },
-  {
-    "host_name": "public-vpn-222",
-    "host": "public-vpn-222.opengw.net",
-    "ip": "219.100.37.183",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 338.19,
-    "ping": 29,
-    "sessions": 47,
-    "score": 2289755,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 137
-  },
-  {
-    "host_name": "public-vpn-154",
-    "host": "public-vpn-154.opengw.net",
-    "ip": "219.100.37.121",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 162.14,
-    "ping": 18,
-    "sessions": 0,
-    "score": 2374233,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 139
+    "ike_ms": 156
   },
   {
     "host_name": "public-vpn-155",
@@ -548,7 +434,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 139
+    "ike_ms": 154
   },
   {
     "host_name": "public-vpn-234",
@@ -567,7 +453,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 140
+    "ike_ms": 167
   },
   {
     "host_name": "public-vpn-259",
@@ -586,7 +472,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 137
+    "ike_ms": 156
   },
   {
     "host_name": "public-vpn-162",
@@ -605,26 +491,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 137
-  },
-  {
-    "host_name": "public-vpn-240",
-    "host": "public-vpn-240.opengw.net",
-    "ip": "219.100.37.216",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 134.45,
-    "ping": 18,
-    "sessions": 0,
-    "score": 1995505,
-    "uptime_hours": 486.2,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-13T13:30:05Z",
-    "carried": true,
-    "ike_ms": 627
+    "ike_ms": 147
   },
   {
     "host_name": "public-vpn-146",
@@ -643,26 +510,26 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 153
   },
   {
-    "host_name": "public-vpn-129",
-    "host": "public-vpn-129.opengw.net",
-    "ip": "219.100.37.103",
+    "host_name": "public-vpn-222",
+    "host": "public-vpn-222.opengw.net",
+    "ip": "219.100.37.183",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 242.59,
-    "ping": 22,
-    "sessions": 50,
-    "score": 1676445,
-    "uptime_hours": 509.1,
+    "speed_mbps": 246.07,
+    "ping": 11,
+    "sessions": 55,
+    "score": 2402916,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 191
+    "ike_ms": 150
   },
   {
     "host_name": "public-vpn-201",
@@ -681,45 +548,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-14T03:46:05Z",
     "carried": true,
-    "ike_ms": 138
-  },
-  {
-    "host_name": "public-vpn-105",
-    "host": "public-vpn-105.opengw.net",
-    "ip": "219.100.37.85",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 390.76,
-    "ping": 8,
-    "sessions": 86,
-    "score": 2147095,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 136
-  },
-  {
-    "host_name": "public-vpn-67",
-    "host": "public-vpn-67.opengw.net",
-    "ip": "219.100.37.84",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 238.31,
-    "ping": 9,
-    "sessions": 60,
-    "score": 1797490,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 136
+    "ike_ms": 150
   },
   {
     "host_name": "public-vpn-51",
@@ -738,7 +567,7 @@
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 136
+    "ike_ms": 149
   },
   {
     "host_name": "public-vpn-207",
@@ -749,34 +578,53 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 230.36,
-    "ping": 13,
-    "sessions": 62,
-    "score": 2960912,
-    "uptime_hours": 509.1,
+    "speed_mbps": 213.43,
+    "ping": 21,
+    "sessions": 52,
+    "score": 2928636,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 139
+    "ike_ms": 150
   },
   {
-    "host_name": "public-vpn-251",
-    "host": "public-vpn-251.opengw.net",
-    "ip": "219.100.37.223",
+    "host_name": "public-vpn-105",
+    "host": "public-vpn-105.opengw.net",
+    "ip": "219.100.37.85",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 292.24,
-    "ping": 31,
-    "sessions": 96,
-    "score": 3006711,
-    "uptime_hours": 509.1,
+    "speed_mbps": 306.98,
+    "ping": 17,
+    "sessions": 99,
+    "score": 2158736,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 139
+    "ike_ms": 151
+  },
+  {
+    "host_name": "public-vpn-129",
+    "host": "public-vpn-129.opengw.net",
+    "ip": "219.100.37.103",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 187.54,
+    "ping": 23,
+    "sessions": 44,
+    "score": 1662658,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 144
   },
   {
     "host_name": "public-vpn-211",
@@ -787,110 +635,53 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 180.41,
-    "ping": 13,
-    "sessions": 37,
-    "score": 1450877,
-    "uptime_hours": 509.1,
+    "speed_mbps": 157.32,
+    "ping": 27,
+    "sessions": 28,
+    "score": 1391931,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 137
+    "ike_ms": 143
   },
   {
-    "host_name": "public-vpn-218",
-    "host": "public-vpn-218.opengw.net",
-    "ip": "219.100.37.187",
+    "host_name": "public-vpn-67",
+    "host": "public-vpn-67.opengw.net",
+    "ip": "219.100.37.84",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 232.65,
-    "ping": 22,
-    "sessions": 82,
-    "score": 2571495,
-    "uptime_hours": 509.1,
+    "speed_mbps": 210.73,
+    "ping": 16,
+    "sessions": 58,
+    "score": 1795974,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 137
+    "ike_ms": 149
   },
   {
-    "host_name": "public-vpn-223",
-    "host": "public-vpn-223.opengw.net",
-    "ip": "219.100.37.199",
+    "host_name": "public-vpn-52",
+    "host": "public-vpn-52.opengw.net",
+    "ip": "219.100.37.16",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 229.35,
-    "ping": 11,
-    "sessions": 82,
-    "score": 1911309,
-    "uptime_hours": 509.1,
+    "speed_mbps": 273.54,
+    "ping": 23,
+    "sessions": 101,
+    "score": 1764807,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 137
-  },
-  {
-    "host_name": "public-vpn-79",
-    "host": "public-vpn-79.opengw.net",
-    "ip": "219.100.37.27",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 191.94,
-    "ping": 19,
-    "sessions": 60,
-    "score": 2459650,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 138
-  },
-  {
-    "host_name": "public-vpn-104",
-    "host": "public-vpn-104.opengw.net",
-    "ip": "219.100.37.58",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 198.6,
-    "ping": 14,
-    "sessions": 66,
-    "score": 1900459,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 142
-  },
-  {
-    "host_name": "public-vpn-55",
-    "host": "public-vpn-55.opengw.net",
-    "ip": "219.100.37.20",
-    "port": 443,
-    "port_guessed": false,
-    "udp_port": 0,
-    "country": "JP",
-    "country_name": "Japan",
-    "speed_mbps": 237.69,
-    "ping": 9,
-    "sessions": 102,
-    "score": 1982359,
-    "uptime_hours": 509.1,
-    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
-    "carried": false,
-    "ike_ms": 134
+    "ike_ms": 153
   },
   {
     "host_name": "vpn659056440",
@@ -909,7 +700,64 @@
     "operator": "BG VPN",
     "last_seen": "2026-11-13T22:57:21Z",
     "carried": true,
-    "ike_ms": 157
+    "ike_ms": 138
+  },
+  {
+    "host_name": "public-vpn-79",
+    "host": "public-vpn-79.opengw.net",
+    "ip": "219.100.37.27",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 162.81,
+    "ping": 17,
+    "sessions": 54,
+    "score": 2453428,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 147
+  },
+  {
+    "host_name": "public-vpn-223",
+    "host": "public-vpn-223.opengw.net",
+    "ip": "219.100.37.199",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 177.76,
+    "ping": 10,
+    "sessions": 70,
+    "score": 1901727,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 150
+  },
+  {
+    "host_name": "public-vpn-218",
+    "host": "public-vpn-218.opengw.net",
+    "ip": "219.100.37.187",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 177.51,
+    "ping": 15,
+    "sessions": 76,
+    "score": 2597942,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 143
   },
   {
     "host_name": "public-vpn-202",
@@ -920,34 +768,34 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 214.89,
-    "ping": 15,
-    "sessions": 110,
-    "score": 1269525,
-    "uptime_hours": 509.1,
+    "speed_mbps": 183.88,
+    "ping": 9,
+    "sessions": 81,
+    "score": 1259524,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 135
+    "ike_ms": 146
   },
   {
-    "host_name": "public-vpn-102",
-    "host": "public-vpn-102.opengw.net",
-    "ip": "219.100.37.32",
+    "host_name": "public-vpn-104",
+    "host": "public-vpn-104.opengw.net",
+    "ip": "219.100.37.58",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 1596.18,
-    "ping": 18,
-    "sessions": 178,
-    "score": 1596461,
-    "uptime_hours": 509.1,
+    "speed_mbps": 156.77,
+    "ping": 8,
+    "sessions": 61,
+    "score": 1896463,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 135
+    "ike_ms": 144
   },
   {
     "host_name": "public-vpn-210",
@@ -958,34 +806,34 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 202.44,
-    "ping": 23,
-    "sessions": 105,
-    "score": 2754610,
-    "uptime_hours": 509.1,
+    "speed_mbps": 188.01,
+    "ping": 12,
+    "sessions": 89,
+    "score": 2792390,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 139
+    "ike_ms": 144
   },
   {
-    "host_name": "public-vpn-163",
-    "host": "public-vpn-163.opengw.net",
-    "ip": "219.100.37.126",
+    "host_name": "public-vpn-55",
+    "host": "public-vpn-55.opengw.net",
+    "ip": "219.100.37.20",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 181.17,
-    "ping": 8,
-    "sessions": 91,
-    "score": 2820907,
-    "uptime_hours": 509.1,
+    "speed_mbps": 181.46,
+    "ping": 11,
+    "sessions": 85,
+    "score": 1970029,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 138
+    "ike_ms": 147
   },
   {
     "host_name": "public-vpn-88",
@@ -996,53 +844,53 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 179.78,
-    "ping": 17,
-    "sessions": 91,
-    "score": 1584424,
-    "uptime_hours": 509.1,
+    "speed_mbps": 165.83,
+    "ping": 10,
+    "sessions": 82,
+    "score": 1578489,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 137
+    "ike_ms": 153
   },
   {
-    "host_name": "public-vpn-220",
-    "host": "public-vpn-220.opengw.net",
-    "ip": "219.100.37.221",
+    "host_name": "public-vpn-102",
+    "host": "public-vpn-102.opengw.net",
+    "ip": "219.100.37.32",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 132.12,
-    "ping": 21,
-    "sessions": 61,
-    "score": 2582967,
-    "uptime_hours": 509.1,
+    "speed_mbps": 1107.32,
+    "ping": 10,
+    "sessions": 199,
+    "score": 1596461,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 137
+    "ike_ms": 153
   },
   {
-    "host_name": "public-vpn-52",
-    "host": "public-vpn-52.opengw.net",
-    "ip": "219.100.37.16",
+    "host_name": "public-vpn-251",
+    "host": "public-vpn-251.opengw.net",
+    "ip": "219.100.37.223",
     "port": 443,
     "port_guessed": false,
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 218.24,
-    "ping": 23,
-    "sessions": 145,
-    "score": 1764807,
-    "uptime_hours": 509.1,
+    "speed_mbps": 157.73,
+    "ping": 13,
+    "sessions": 85,
+    "score": 3147606,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 135
+    "ike_ms": 158
   },
   {
     "host_name": "public-vpn-253",
@@ -1053,15 +901,53 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 188.3,
-    "ping": 19,
-    "sessions": 120,
-    "score": 1239467,
-    "uptime_hours": 509.1,
+    "speed_mbps": 139.35,
+    "ping": 9,
+    "sessions": 83,
+    "score": 1230730,
+    "uptime_hours": 518.3,
     "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 138
+    "ike_ms": 144
+  },
+  {
+    "host_name": "public-vpn-163",
+    "host": "public-vpn-163.opengw.net",
+    "ip": "219.100.37.126",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 144.07,
+    "ping": 14,
+    "sessions": 96,
+    "score": 2826777,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 159
+  },
+  {
+    "host_name": "public-vpn-220",
+    "host": "public-vpn-220.opengw.net",
+    "ip": "219.100.37.221",
+    "port": 443,
+    "port_guessed": false,
+    "udp_port": 0,
+    "country": "JP",
+    "country_name": "Japan",
+    "speed_mbps": 106.69,
+    "ping": 11,
+    "sessions": 73,
+    "score": 2613516,
+    "uptime_hours": 518.3,
+    "operator": "Daiyuu Nobori_ Japan. Academic Use Only.",
+    "last_seen": "2026-11-14T21:44:30Z",
+    "carried": false,
+    "ike_ms": 160
   },
   {
     "host_name": "laud",
@@ -1072,14 +958,14 @@
     "udp_port": 0,
     "country": "JP",
     "country_name": "Japan",
-    "speed_mbps": 36.78,
+    "speed_mbps": 86.84,
     "ping": 13,
-    "sessions": 141,
-    "score": 1435009,
-    "uptime_hours": 481.0,
+    "sessions": 140,
+    "score": 1436232,
+    "uptime_hours": 487.7,
     "operator": "Japan VPN",
-    "last_seen": "2026-11-14T12:36:09Z",
+    "last_seen": "2026-11-14T21:44:30Z",
     "carried": false,
-    "ike_ms": 152
+    "ike_ms": 176
   }
 ]
