@@ -1,6 +1,7 @@
 package kittoku.osc.activity
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
@@ -45,8 +46,18 @@ internal data class FreeServer(
     val ping: Int,
 )
 
-private const val FREE_SERVERS_URL =
-    "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json"
+// The same file from several places: one blocked host must not break the page. raw.githubusercontent.com
+// is a usual casualty of filtering in Iran while the browser may still open it (its own DNS over HTTPS and
+// HTTP/3 take another path than this app's plain TLS). The saved copy inside the app is the last resort.
+private val FREE_SERVERS_URLS = listOf(
+    "https://raw.githubusercontent.com/Banafshex/Banafsh-sstp/main/servers.json",
+    "https://cdn.jsdelivr.net/gh/Banafshex/Banafsh-sstp@main/servers.json",
+    "https://testingcf.jsdelivr.net/gh/Banafshex/Banafsh-sstp@main/servers.json",
+    "https://api.github.com/repos/Banafshex/Banafsh-sstp/contents/servers.json",
+)
+
+private const val UI_PREFS_NAME = "banafsh_ui"
+private const val CACHE_KEY = "servers_cache"
 
 private const val PENDING = -2
 
@@ -131,10 +142,26 @@ class ServerListActivity : AppCompatActivity() {
         tvNote.text = getString(R.string.bs_load_running)
 
         Thread {
-            val downloaded = try {
-                downloadFreeServers()
+            val uiPrefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
+
+            var list = try {
+                downloadFreeServers(uiPrefs)
             } catch (e: Exception) {
-                null
+                emptyList()
+            }
+
+            // No mirror answered: the last list that was saved still works.
+            var stale = false
+
+            if (list.isEmpty()) {
+                list = parseServers(uiPrefs.getString(CACHE_KEY, null))
+                stale = list.isNotEmpty()
+            }
+
+            // First run with no network at all: the copy that ships inside the app.
+            if (list.isEmpty()) {
+                list = parseServers(readSeed())
+                stale = list.isNotEmpty()
             }
 
             runOnUiThread {
@@ -144,13 +171,17 @@ class ServerListActivity : AppCompatActivity() {
 
                 progress.visibility = View.GONE
 
-                if (downloaded.isNullOrEmpty()) {
+                if (list.isEmpty()) {
                     Toast.makeText(this, R.string.bs_load_failed, Toast.LENGTH_LONG).show()
                     finish()
                     return@runOnUiThread
                 }
 
-                servers = downloaded
+                if (stale) {
+                    Toast.makeText(this, R.string.bs_load_stale, Toast.LENGTH_LONG).show()
+                }
+
+                servers = list
                 results = IntArray(servers.size) { PENDING }
                 vpnOn = isVpnActive()
 
@@ -165,13 +196,61 @@ class ServerListActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun downloadFreeServers(): List<FreeServer> {
-        val connection = URL(FREE_SERVERS_URL).openConnection() as HttpURLConnection
-        connection.connectTimeout = 15000
-        connection.readTimeout = 15000
+    private fun downloadFreeServers(uiPrefs: SharedPreferences): List<FreeServer> {
+        for (url in FREE_SERVERS_URLS) {
+            val text = httpGet(url) ?: continue
+            val parsed = parseServers(text)
 
-        try {
-            val text = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            if (parsed.isNotEmpty()) {
+                uiPrefs.edit().putString(CACHE_KEY, text).apply()
+                return parsed
+            }
+        }
+
+        return emptyList()
+    }
+
+    private fun httpGet(address: String): String? {
+        var connection: HttpURLConnection? = null
+
+        return try {
+            connection = (URL(address).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 10000
+                setRequestProperty("User-Agent", "Banafsh-sstp")
+
+                // The GitHub API hands out the raw file only when it is asked for it.
+                if (address.contains("api.github.com")) {
+                    setRequestProperty("Accept", "application/vnd.github.raw")
+                }
+            }
+
+            if (connection.responseCode != 200) {
+                null
+            } else {
+                connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            }
+        } catch (e: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun readSeed(): String? {
+        return try {
+            resources.openRawResource(R.raw.servers).bufferedReader(Charsets.UTF_8).use { it.readText() }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseServers(text: String?): List<FreeServer> {
+        if (text.isNullOrBlank()) {
+            return emptyList()
+        }
+
+        return try {
             val array = JSONArray(text)
             val result = mutableListOf<FreeServer>()
 
@@ -196,9 +275,9 @@ class ServerListActivity : AppCompatActivity() {
                 )
             }
 
-            return result
-        } finally {
-            connection.disconnect()
+            result
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 

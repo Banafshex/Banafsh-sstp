@@ -41,6 +41,7 @@
     <string name="bs_test_all">تست همه</string>
     <string name="bs_load_running">در حال دریافت لیست سرورها…</string>
     <string name="bs_load_failed">دریافت لیست سرورها ناموفق بود. اینترنت را بررسی کنید و دوباره امتحان کنید.</string>
+    <string name="bs_load_stale">تازه‌سازی فهرست از اینترنت ممکن نبود؛ فهرست ذخیره‌شده نمایش داده می‌شود.</string>
     <string name="bs_pill_testing">در حال تست…</string>
     <string name="bs_connect_anyway">این سرور جواب نداد. با این حال وصل شوم؟</string>
     <string name="bs_set_connection">اتصال</string>
