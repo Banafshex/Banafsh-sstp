@@ -23,6 +23,7 @@ LEGACY_SIZE = 60
 # The app ships a copy of the short list inside the APK (res/raw): when every download fails,
 # for example on a network that blocks GitHub, the list still shows.
 SEED_FILE = "app/src/main/res/raw/servers.json"
+SEED_L2TP_FILE = "app/src/main/res/raw/servers_l2tp.json"
 
 # The L2TP/IPsec list: only servers that answer an IKE message (UDP 500). VPN Gate's list does not say which
 # servers offer L2TP, and many volunteer servers do not. The app pings again from the phone.
@@ -403,6 +404,10 @@ def main():
     if l2tp:
         write_json(L2TP_FILE, l2tp)
         stage_in_git(L2TP_FILE)
+
+        # The bundled copy of the L2TP list too: the same fallback as the short list has.
+        write_json(SEED_L2TP_FILE, l2tp)
+        stage_in_git(SEED_L2TP_FILE)
     else:
         # Probably this machine cannot send UDP: do not wipe the list that is there.
         print(f"No server answered IKE: keeping the old {L2TP_FILE}")

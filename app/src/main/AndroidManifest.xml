@@ -96,6 +96,21 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name=".activity.OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenSSTPClient.NoActionBar" />
+
+        <service
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            android:name=".l2tp.L2tpVpnService"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
         <service
             android:exported="true"
             android:name=".service.SstpTileService"
