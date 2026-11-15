@@ -20,6 +20,10 @@ DDNS_SUFFIX = ".opengw.net"
 LEGACY_FILE = "servers.json"
 OUTPUT_FILE = "servers_v2.json"
 LEGACY_SIZE = 60
+# The app ships a copy of the short list inside the APK (res/raw): when every download fails,
+# for example on a network that blocks GitHub, the list still shows.
+SEED_FILE = "app/src/main/res/raw/servers.json"
+SEED_L2TP_FILE = "app/src/main/res/raw/servers_l2tp.json"
 
 # The L2TP/IPsec list: only servers that answer an IKE message (UDP 500). VPN Gate's list does not say which
 # servers offer L2TP, and many volunteer servers do not. The app pings again from the phone.
@@ -385,16 +389,25 @@ def main():
         print(f"  {s['host']}:{s['port']}  {s['country']}  {s['speed_mbps']} Mbps  sessions {s['sessions']}")
 
     full = merge_with_previous(fresh, load_previous(OUTPUT_FILE), datetime.now(timezone.utc))
+    legacy = legacy_list(fresh)
 
     write_json(OUTPUT_FILE, full)
-    write_json(LEGACY_FILE, legacy_list(fresh))
+    write_json(LEGACY_FILE, legacy)
     stage_in_git(OUTPUT_FILE)
+
+    # Keep the bundled copy in step with servers.json, so the app's fallback is never too old.
+    write_json(SEED_FILE, legacy)
+    stage_in_git(SEED_FILE)
 
     now = datetime.now(timezone.utc)
     l2tp = build_l2tp_list(fresh, load_previous(L2TP_FILE), now)
     if l2tp:
         write_json(L2TP_FILE, l2tp)
         stage_in_git(L2TP_FILE)
+
+        # The bundled copy of the L2TP list too: the same fallback as the short list has.
+        write_json(SEED_L2TP_FILE, l2tp)
+        stage_in_git(SEED_L2TP_FILE)
     else:
         # Probably this machine cannot send UDP: do not wipe the list that is there.
         print(f"No server answered IKE: keeping the old {L2TP_FILE}")

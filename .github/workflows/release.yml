@@ -72,4 +72,5 @@ jobs:
           gh release create "v${VERSION_NAME}" "Banafsh-sstp-${VERSION_NAME}.apk" \
             --title "Banafsh-sstp ${VERSION_NAME}" \
             --notes-file release_body.md \
+            --target "$GITHUB_SHA" \
             $FLAGS

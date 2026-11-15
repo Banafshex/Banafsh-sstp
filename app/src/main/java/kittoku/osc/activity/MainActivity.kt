@@ -1,6 +1,7 @@
 package kittoku.osc.activity
 
 import android.Manifest
+import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -19,6 +20,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -46,6 +48,9 @@ import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsNotifier
+import kittoku.osc.DnsDialog
+import kittoku.osc.Protocol
+import kittoku.osc.ProtocolSwitch
 import kittoku.osc.SharedServer
 import kittoku.osc.ThemeMode
 import kittoku.osc.flagEmoji
@@ -59,6 +64,7 @@ import kittoku.osc.preference.PROFILE_KEY_HEADER
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
+import kittoku.osc.preference.accessor.setStringPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setSetPrefValue
 import kittoku.osc.preference.custom.OscPreference
@@ -165,10 +171,14 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-        // The picture runs under the status bar; its icons must stay readable in light and dark mode.
-        val isNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                android.content.res.Configuration.UI_MODE_NIGHT_YES
-        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = !isNight
+        binding.toolbar.overflowIcon = ContextCompat.getDrawable(this, R.drawable.ic_bars)?.mutate()?.apply {
+            setTint(ContextCompat.getColor(this@MainActivity, R.color.bs_ink))
+        }
+        // The background is light: dark icons in the status bar and the navigation bar.
+        WindowCompat.getInsetsController(window, binding.root).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
         ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
@@ -215,7 +225,11 @@ class MainActivity : AppCompatActivity() {
 
             var infoShown = true
 
-            if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
+            if (!uiPrefs.getBoolean(OnboardingActivity.KEY_DONE, false)) {
+                // First launch: a short intro (it can be skipped) instead of the old welcome dialog.
+                uiPrefs.edit().putBoolean(KEY_HIDE_WELCOME, true).apply()
+                startActivity(Intent(this, OnboardingActivity::class.java))
+            } else if (!uiPrefs.getBoolean(KEY_HIDE_WELCOME, false)) {
                 showWelcomeDialog(this)
             } else if (lastSeen != BuildConfig.VERSION_NAME) {
                 showWhatsNewDialog(this)
@@ -250,11 +264,19 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    private fun openSettings() {
+        startActivity(
+            Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
+        )
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.open_settings -> startActivity(
-                Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
-            )
+            R.id.open_settings -> openSettings()
+
+            R.id.manual_server -> showServerDialog()
+
+            R.id.dns_settings -> DnsDialog.show(this)
 
             R.id.check_update -> UpdateUi.checkNow(this, prefs)
 
@@ -398,6 +420,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyReceivedServer(server: SharedServer) {
+        uiPrefs.edit().remove("server_list").apply() // not from a list: any service may use it
         if (!applyServerSettings(server.host, server.port, server.user, server.pass, !server.verify)) {
             Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
             return
@@ -436,9 +459,10 @@ class MainActivity : AppCompatActivity() {
         val host = data.getStringExtra(ServerListActivity.EXTRA_HOST).orEmpty()
         val port = data.getIntExtra(ServerListActivity.EXTRA_PORT, 443)
         val countryCode = data.getStringExtra(ServerListActivity.EXTRA_COUNTRY_CODE).orEmpty()
+        val ping = data.getIntExtra(ServerListActivity.EXTRA_PING, 0)
 
         if (host.isNotEmpty()) {
-            applyFreeServer(FreeServer(host, port, "", countryCode, 0.0, 0))
+            applyFreeServer(FreeServer(host, port, "", countryCode, 0.0, ping))
         }
     }
 
@@ -451,6 +475,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyServerSettings(host: String, port: Int, user: String, pass: String, disableVerify: Boolean): Boolean {
+        uiPrefs.edit().remove("server_ping").apply() // a server entered by hand has no measured ping
         val profile = try {
             val json = JSONObject(serializeProfile(prefs))
 
@@ -478,7 +503,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyFreeServer(server: FreeServer) {
-        if (!applyServerSettings(server.host, server.port, "vpn", "vpn", true)) {
+        // L2TP does not use the TCP port, so its list may leave it out: keep the stored port valid anyway.
+        val port = if (server.port in 1..65535) server.port else 443
+
+        if (!applyServerSettings(server.host, port, "vpn", "vpn", true)) {
             Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
             return
         }
@@ -486,6 +514,8 @@ class MainActivity : AppCompatActivity() {
         uiPrefs.edit()
             .putString("server_host", server.host)
             .putString("server_country", server.countryCode)
+            .putString("server_list", ProtocolSwitch.get(this).listKey) // the list this server was picked from
+            .putInt("server_ping", server.ping)
             .apply()
         updatePreferenceView()
 
@@ -524,6 +554,7 @@ class MainActivity : AppCompatActivity() {
                     port == null || port !in 1..65535 -> etPort.error = getString(R.string.bs_err_port)
                     else -> {
                         if (applyServerSettings(host, port, etUser.text.toString(), etPass.text.toString(), false)) {
+                            uiPrefs.edit().remove("server_list").apply() // typed by hand: any service may use it
                             Toast.makeText(this, R.string.bs_saved, Toast.LENGTH_SHORT).show()
                             dialog.dismiss()
                         }
@@ -535,6 +566,112 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // ---- Protocol dialog -------------------------------------------------
+
+    internal fun showProtocolDialog() {
+        val current = ProtocolSwitch.get(this)
+        val density = resources.displayMetrics.density
+        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        var dialog: Dialog? = null
+
+        Protocol.values().forEach { protocol ->
+            val row = layoutInflater.inflate(R.layout.item_protocol, container, false)
+            val card = row as com.google.android.material.card.MaterialCardView
+            val selected = protocol == current
+
+            row.findViewById<TextView>(R.id.tvProtoName).setText(protocol.nameRes)
+            row.findViewById<TextView>(R.id.tvProtoDesc).setText(protocol.descRes)
+            row.findViewById<ImageView>(R.id.ivProtoCheck).visibility = if (selected) View.VISIBLE else View.INVISIBLE
+
+            card.strokeColor = ContextCompat.getColor(this, if (selected) R.color.bs_dialog_link else R.color.bs_dialog_stroke)
+            card.strokeWidth = ((if (selected) 2 else 1) * density).toInt()
+
+            row.setOnClickListener {
+                dialog?.dismiss()
+
+                if (protocol != current) {
+                    ProtocolSwitch.set(this, protocol)
+
+                    if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
+                        // A running tunnel keeps its service; the new one starts with the next connection.
+                        Toast.makeText(this, R.string.bs_protocol_next, Toast.LENGTH_LONG).show()
+                    } else {
+                        verifyServerForService { }
+                    }
+                }
+            }
+
+            container.addView(row)
+        }
+
+        dialog = GlassDialog.show(
+            this,
+            R.drawable.ic_gd_protocol,
+            getString(R.string.bs_protocol_title),
+            content = container,
+            secondaryText = getString(R.string.bs_cancel)
+        )
+    }
+
+    // ---- Each service has its own server list ------------------------------
+
+    // A server picked from the list of one service is not offered to the other one.
+    private fun serverMatchesService(): Boolean {
+        val marker = uiPrefs.getString("server_list", null) ?: return true
+        return marker == ProtocolSwitch.get(this).listKey
+    }
+
+    private fun clearListServer() {
+        setStringPrefValue("", OscPrefKey.HOME_HOSTNAME, prefs)
+        uiPrefs.edit().remove("server_host").remove("server_country").remove("server_list").apply()
+        updatePreferenceView()
+    }
+
+    // The server was picked from the other service's list. Many servers are in both: look into the list of the
+    // selected service and only ask for a new server when this one is not there. [onSame] runs when it can stay.
+    private fun verifyServerForService(onSame: () -> Unit) {
+        if (serverMatchesService()) {
+            onSame()
+            return
+        }
+
+        val protocol = ProtocolSwitch.get(this)
+        val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
+
+        if (host.isEmpty()) {
+            onSame()
+            return
+        }
+
+        Thread {
+            val hosts = fetchServerHosts(protocol) // null: the list could not be loaded
+
+            runOnUiThread {
+                if (isFinishing || isDestroyed || ProtocolSwitch.get(this) != protocol) return@runOnUiThread
+
+                if (hosts != null && host in hosts) {
+                    uiPrefs.edit().putString("server_list", protocol.listKey).apply()
+                    onSame()
+                } else {
+                    clearListServer()
+                    showChooseAgain()
+                }
+            }
+        }.start()
+    }
+
+    private fun showChooseAgain() {
+        GlassDialog.show(
+            this,
+            R.drawable.ic_gd_protocol,
+            getString(R.string.bs_choose_again_title),
+            body = getString(R.string.bs_choose_again_body, getString(ProtocolSwitch.get(this).nameRes)),
+            primaryText = getString(R.string.bs_choose_again_button),
+            onPrimary = { showFreeConfig() },
+            secondaryText = getString(R.string.bs_later)
+        )
+    }
+
     // ---- Connect / disconnect ---------------------------------------------
 
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -544,6 +681,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     internal fun connectNow() {
+        if (!serverMatchesService()) {
+            verifyServerForService { connectNow() }
+            return
+        }
+
         if (getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs).isEmpty()) {
             Toast.makeText(this, R.string.bs_connect_pick_server, Toast.LENGTH_LONG).show()
             return
@@ -558,15 +700,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // The chosen service (L2TP or SSTP) decides which tunnel is started.
     private fun startVpnService() {
-        ContextCompat.startForegroundService(
-            this,
-            Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_CONNECT)
-        )
+        ProtocolSwitch.connect(this)
     }
 
     internal fun disconnectNow() {
-        startService(Intent(this, SstpVpnService::class.java).setAction(ACTION_VPN_DISCONNECT))
+        ProtocolSwitch.disconnect(this)
     }
 
     internal fun toggleConnection() {

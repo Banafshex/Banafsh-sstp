@@ -41,6 +41,7 @@
     <string name="bs_test_all">Test all</string>
     <string name="bs_load_running">Loading the server list…</string>
     <string name="bs_load_failed">Could not load the server list. Check your internet and try again.</string>
+    <string name="bs_load_stale">Could not refresh the list from the network. Showing the saved list.</string>
     <string name="bs_pill_testing">Testing…</string>
     <string name="bs_connect_anyway">This server did not respond. Connect anyway?</string>
     <string name="bs_set_connection">Connection</string>

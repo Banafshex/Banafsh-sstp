@@ -3,6 +3,7 @@ package kittoku.osc.terminal
 import android.net.IpPrefix
 import android.os.Build
 import android.os.ParcelFileDescriptor
+import kittoku.osc.DnsPresets
 import kittoku.osc.ControlMessage
 import kittoku.osc.IranApps
 import kittoku.osc.IranRanges
@@ -46,6 +47,14 @@ internal class IPTerminal(private val bridge: SharedBridge) {
 
             if (doUseCustomDNSServer) {
                 bridge.builder.addDnsServer(getStringPrefValue(OscPrefKey.DNS_CUSTOM_ADDRESS, bridge.prefs))
+
+                // A DNS preset (menu > DNS) has a second address.
+                bridge.prefs.getString(DnsPresets.KEY_SECONDARY, "")?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                    try {
+                        bridge.builder.addDnsServer(it)
+                    } catch (_: IllegalArgumentException) {
+                    }
+                }
             }
 
             if (!bridge.currentProposedDNS.contentEquals(ByteArray(4))) {
