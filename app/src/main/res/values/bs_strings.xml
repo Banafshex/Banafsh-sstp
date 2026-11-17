@@ -29,10 +29,10 @@
     <string name="bs_free_title">Choose a server</string>
     <string name="bs_test_again">Test again</string>
     <string name="bs_test_running">Testing servers… %1$d of %2$d</string>
-    <string name="bs_test_done">%1$d working · healthy ones on top</string>
-    <string name="bs_test_none">No server answered from your network. Try again in a few minutes.</string>
+    <string name="bs_test_done">Servers that replied: %1$d</string>
+    <string name="bs_test_none">No server answered the test. Try connecting or choose another protocol.</string>
     <string name="bs_test_vpn_on">To test the servers, disconnect first.</string>
-    <string name="bs_server_failed">Failed</string>
+    <string name="bs_server_failed">No reply</string>
     <string name="bs_ping_ms">%1$d ms</string>
     <string name="bs_servers_title">Free servers</string>
     <string name="bs_test_all">Test all</string>
@@ -40,7 +40,6 @@
     <string name="bs_load_failed">Could not load the server list. Check your internet and try again.</string>
     <string name="bs_load_stale">Could not refresh the list from the network. Showing the saved list.</string>
     <string name="bs_pill_testing">Testing…</string>
-    <string name="bs_connect_anyway">This server did not respond. Connect anyway?</string>
     <string name="bs_set_connection">Connection</string>
     <string name="bs_set_log_title">Connection Log</string>
     <string name="bs_set_log_summary">Technical details of the current connection</string>
@@ -88,7 +87,6 @@
     <string name="bs_config_saved">Config saved and ready to use</string>
     <string name="bs_config_msg">Server address: %1$s\nPort: %2$d\nUsername: %3$s\nPassword: %4$s\n\nIf you confirm, this config replaces the current one and the app is ready to use.</string>
     <string name="bs_empty">(empty)</string>
-    <string name="bs_server_set_failed">Setting the server failed</string>
     <string name="bs_server_set_connecting">Server %1$s is set; connecting…</string>
     <string name="bs_invalid_setting">Invalid setting: %1$s</string>
     <string name="bs_welcome_title">Welcome to Banafsh-sstp</string>

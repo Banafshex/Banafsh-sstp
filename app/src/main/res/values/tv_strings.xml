@@ -15,7 +15,9 @@
     </string-array>
     <string name="tv_select_app_first">Choose at least one installed app in Settings → Split tunneling before connecting.</string>
     <string name="tv_ob_split">By default, all apps use the VPN. In Settings → Split tunneling, choose the apps that should connect directly, or use the VPN only for the apps you select. Reconnect to apply your choices.</string>
-    <string name="tv_connect_untested">This server is still being tested. Connect now?</string>
     <string name="tv_no_file_picker">No file picker is available on this TV.</string>
     <string name="tv_no_handler">No app on this TV can open this action.</string>
+    <string name="tv_test_deadline">Test finished. Replies: %1$d · No result yet: %2$d</string>
+    <string name="tv_not_tested">No result</string>
+    <string name="tv_vpn_consent_needed">Allow the VPN connection in the Android TV prompt to connect.</string>
 </resources>

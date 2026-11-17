@@ -73,7 +73,7 @@
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="10dp"
             android:textColor="@color/bs_ink_soft"
-            android:text="@string/bs_quality_hint"
+            android:text="@string/tv_server_connect_hint"
             android:textSize="15sp"
             android:visibility="gone" />
 

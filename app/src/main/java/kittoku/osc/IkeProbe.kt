@@ -1,10 +1,8 @@
 package kittoku.osc
 
-import android.os.SystemClock
 import java.io.ByteArrayOutputStream
 import java.net.DatagramPacket
 import java.net.DatagramSocket
-import java.net.InetAddress
 import java.net.SocketTimeoutException
 import java.security.SecureRandom
 
@@ -20,23 +18,26 @@ internal object IkeProbe {
     private const val TRY_TIMEOUT_MS = 1600
 
     /** Milliseconds until the first IKE answer, or [ServerTester.FAILED]. Blocks, so call it off the main thread. */
-    fun test(host: String): Int {
+    fun test(endpoint: ServerEndpoint, batch: ProbeBatch, port: Int = PORT, tryTimeoutMs: Int = TRY_TIMEOUT_MS): Int {
         return try {
-            val address = InetAddress.getByName(host)
+            val address = EndpointResolver.resolve(endpoint.dialHost, tryTimeoutMs)
             val cookie = ByteArray(8).also { SecureRandom().nextBytes(it) }
             val request = buildMainModeMessage1(cookie)
 
-            DatagramSocket().use { socket ->
-                socket.soTimeout = TRY_TIMEOUT_MS
-                socket.connect(address, PORT)
+            batch.withSocket(DatagramSocket()) { socket ->
+                socket.connect(address, port)
 
                 val buffer = ByteArray(2048)
 
                 repeat(TRIES) {
-                    val startedAt = SystemClock.elapsedRealtime()
+                    val startedAt = System.nanoTime()
+                    val deadline = startedAt + tryTimeoutMs * 1_000_000L
                     socket.send(DatagramPacket(request, request.size))
 
                     while (true) {
+                        val remaining = deadline - System.nanoTime()
+                        if (remaining <= 0) break
+                        socket.soTimeout = (remaining / 1_000_000L).toInt().coerceAtLeast(1)
                         val reply = DatagramPacket(buffer, buffer.size)
 
                         try {
@@ -47,13 +48,12 @@ internal object IkeProbe {
 
                         // An ISAKMP header that echoes our initiator cookie.
                         if (reply.length >= 28 && (0 until 8).all { buffer[it] == cookie[it] }) {
-                            return (SystemClock.elapsedRealtime() - startedAt).toInt().coerceAtLeast(1)
+                            return@withSocket ((System.nanoTime() - startedAt) / 1_000_000L).toInt().coerceAtLeast(1)
                         }
                     }
                 }
+                ServerTester.FAILED
             }
-
-            ServerTester.FAILED
         } catch (_: Exception) {
             ServerTester.FAILED
         }

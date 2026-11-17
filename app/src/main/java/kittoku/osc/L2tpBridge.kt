@@ -226,7 +226,7 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
                 app,
                 Intent(app, L2tpVpnService::class.java)
                     .setAction(L2tpVpnService.ACTION_CONNECT)
-                    .putExtra(L2tpVpnService.EXTRA_HOST, host)
+                    .putExtra(L2tpVpnService.EXTRA_HOST, CatalogSelection(app).endpoint(host, Protocol.L2TP).dialHost)
                     .putExtra(L2tpVpnService.EXTRA_USER, getStringPrefValue(OscPrefKey.HOME_USERNAME, prefs).ifEmpty { VPN_GATE_SECRET })
                     .putExtra(L2tpVpnService.EXTRA_PASSWORD, getStringPrefValue(OscPrefKey.HOME_PASSWORD, prefs).ifEmpty { VPN_GATE_SECRET })
                     .putExtra(L2tpVpnService.EXTRA_PSK, VPN_GATE_SECRET)

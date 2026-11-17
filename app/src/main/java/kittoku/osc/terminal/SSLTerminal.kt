@@ -6,6 +6,9 @@ import android.os.Build
 import android.util.Base64
 import androidx.core.app.NotificationCompat
 import androidx.documentfile.provider.DocumentFile
+import kittoku.osc.CatalogSelection
+import kittoku.osc.EndpointResolver
+import kittoku.osc.Protocol
 import kittoku.osc.ControlMessage
 import kittoku.osc.R
 import kittoku.osc.Result
@@ -33,8 +36,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.yield
 import java.io.BufferedInputStream
+import java.io.EOFException
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
@@ -62,11 +68,12 @@ internal const val SSL_REQUEST_INTERVAL = 10_000L
 internal class SSLTerminal(private val bridge: SharedBridge) {
     private val mutex = Mutex()
 
-    private var socket: Socket? = null
+    // Owned before DNS/connect so the controller deadline and Disconnect can close it at any stage.
+    private val socket = Socket()
     internal val remoteAddress: String?
-        get() = socket?.inetAddress?.hostAddress
+        get() = socket.inetAddress?.hostAddress
     internal val localAddress: String?
-        get() = socket?.localAddress?.hostAddress
+        get() = socket.localAddress?.hostAddress
     private lateinit var socketInputStream: InputStream
     private lateinit var socketOutputStream: OutputStream
     private lateinit var inboundBuffer: ByteBuffer
@@ -162,12 +169,15 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
             }
         }
 
-        val socketHostname = if (doUseProxy) getStringPrefValue(OscPrefKey.PROXY_HOSTNAME, bridge.prefs) else sslHostname
+        val socketHost = if (doUseProxy) getStringPrefValue(OscPrefKey.PROXY_HOSTNAME, bridge.prefs)
+            else CatalogSelection(bridge.service).endpoint(sslHostname, Protocol.SSTP).dialHost
         val socketPort = if (doUseProxy) getIntPrefValue(OscPrefKey.PROXY_PORT, bridge.prefs) else sslPort
-        socket = Socket(socketHostname, socketPort).also {
-            socketInputStream = it.getInputStream()
-            socketOutputStream = it.getOutputStream()
-        }
+        val address = EndpointResolver.resolve(socketHost, SSL_REQUEST_INTERVAL.toInt())
+        socket.bind(null) // Allocate the file descriptor before asking Android to protect it.
+        if (!bridge.service.protect(socket)) throw IOException("Could not protect the SSTP socket")
+        socket.connect(InetSocketAddress(address, socketPort), SSL_REQUEST_INTERVAL.toInt())
+        socketInputStream = socket.getInputStream()
+        socketOutputStream = socket.getOutputStream()
 
         if (doUseProxy) {
             if (!establishProxy()) {
@@ -259,7 +269,9 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
 
         var response = ""
         while (true) {
-            response += socketInputStream.read().toChar()
+            val next = socketInputStream.read()
+            if (next == -1) throw EOFException("Proxy closed before sending headers")
+            response += next.toChar()
 
             if (response.endsWith(HTTP_SUFFIX)) {
                 break
@@ -318,8 +330,7 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
         }
 
 
-        socket!!.soTimeout = 1_000
-        bridge.service.protect(socket)
+        socket.soTimeout = 1_000
         return true
     }
 
@@ -435,6 +446,7 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
                             inboundBuffer.capacityAfterLimit
                         )
 
+                        if (readSize < 0) throw EOFException("SSTP peer closed the connection")
                         inboundBuffer.limit(inboundBuffer.limit() + readSize)
                     } catch (_: SocketTimeoutException) { }
                 }
@@ -482,6 +494,6 @@ internal class SSLTerminal(private val bridge: SharedBridge) {
 
     internal fun close() {
         jobInitialize?.cancel()
-        socket?.close()
+        socket.close()
     }
 }

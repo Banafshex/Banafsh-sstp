@@ -23,7 +23,7 @@ import javax.net.ssl.X509TrustManager
 internal object ServerTester {
     const val FAILED = -1
 
-    private const val TOTAL_TIMEOUT_MS = 4000L
+    private const val TOTAL_TIMEOUT_MS = 4000
 
     private val watchdog = ScheduledThreadPoolExecutor(1, ThreadFactory { r ->
         Thread(r, "server-test-watchdog").also { it.isDaemon = true }
@@ -36,46 +36,44 @@ internal object ServerTester {
     }
 
     /** Returns the TCP connect time in milliseconds, or [FAILED]. Blocks, so call it off the main thread. */
-    fun test(host: String, port: Int): Int {
-        val raw = Socket()
-        // One deadline for the whole check: closing the socket aborts any blocked step.
-        val timer = watchdog.schedule({ runCatching { raw.close() } }, TOTAL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    fun test(endpoint: ServerEndpoint, port: Int, batch: ProbeBatch): Int = try {
+        batch.withSocket(Socket()) { raw ->
+            val timer = watchdog.schedule({ runCatching { raw.close() } }, TOTAL_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            try {
+                val address = EndpointResolver.resolve(endpoint.dialHost, TOTAL_TIMEOUT_MS)
+                val start = System.nanoTime()
+                raw.connect(InetSocketAddress(address, port), TOTAL_TIMEOUT_MS)
+                val connectMs = ((System.nanoTime() - start) / 1_000_000).toInt().coerceAtLeast(1)
+                raw.soTimeout = TOTAL_TIMEOUT_MS
 
-        return try {
-            val start = System.nanoTime()
-            raw.connect(InetSocketAddress(host, port), TOTAL_TIMEOUT_MS.toInt())
-            val connectMs = ((System.nanoTime() - start) / 1_000_000).toInt().coerceAtLeast(1)
+                val context = SSLContext.getInstance("TLS")
+                context.init(null, arrayOf(trustAll), SecureRandom())
+                val ssl = context.socketFactory.createSocket(raw, endpoint.host, port, true) as SSLSocket
+                ssl.startHandshake()
 
-            raw.soTimeout = TOTAL_TIMEOUT_MS.toInt()
+                val request = "SSTP_DUPLEX_POST /sra_{BA195980-CD49-458b-9E23-C84EE0ADCD75}/ HTTP/1.1\r\n" +
+                        "Content-Length: 18446744073709551615\r\n" +
+                        "Host: ${endpoint.host}\r\n" +
+                        "SSTPCORRELATIONID: {${UUID.randomUUID()}}\r\n\r\n"
 
-            val context = SSLContext.getInstance("TLS")
-            context.init(null, arrayOf(trustAll), SecureRandom())
-            val ssl = context.socketFactory.createSocket(raw, host, port, true) as SSLSocket
-            ssl.startHandshake()
+                ssl.outputStream.write(request.toByteArray(Charsets.US_ASCII))
+                ssl.outputStream.flush()
 
-            val request = "SSTP_DUPLEX_POST /sra_{BA195980-CD49-458b-9E23-C84EE0ADCD75}/ HTTP/1.1\r\n" +
-                    "Content-Length: 18446744073709551615\r\n" +
-                    "Host: $host\r\n" +
-                    "SSTPCORRELATIONID: {${UUID.randomUUID()}}\r\n\r\n"
+                val head = ByteArray(12)
+                var read = 0
+                while (read < head.size) {
+                    val n = ssl.inputStream.read(head, read, head.size - read)
+                    if (n < 0) break
+                    read += n
+                }
 
-            ssl.outputStream.write(request.toByteArray(Charsets.US_ASCII))
-            ssl.outputStream.flush()
-
-            val head = ByteArray(12)
-            var read = 0
-            while (read < head.size) {
-                val n = ssl.inputStream.read(head, read, head.size - read)
-                if (n < 0) break
-                read += n
+                // A real SSTP server answers "HTTP/1.1 200".
+                if (String(head, 0, read, Charsets.US_ASCII).startsWith("HTTP/1.1 200")) connectMs else FAILED
+            } finally {
+                timer.cancel(false)
             }
-
-            // A real SSTP server answers "HTTP/1.1 200".
-            if (String(head, 0, read, Charsets.US_ASCII).startsWith("HTTP/1.1 200")) connectMs else FAILED
-        } catch (e: Exception) {
-            FAILED
-        } finally {
-            timer.cancel(false)
-            runCatching { raw.close() }
         }
+    } catch (_: Exception) {
+        FAILED
     }
 }

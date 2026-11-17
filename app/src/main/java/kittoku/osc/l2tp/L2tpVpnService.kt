@@ -30,11 +30,11 @@ import com.arcansecurity.vpn.l2tpipsec.core.tunnel.TunnelStats
 import com.arcansecurity.vpn.l2tpipsec.core.tunnel.VpnConfig
 import com.arcansecurity.vpn.l2tpipsec.core.util.LogLevel
 import com.arcansecurity.vpn.l2tpipsec.core.util.VpnLogger
-import java.net.InetAddress
-import java.net.UnknownHostException
+import kittoku.osc.EndpointResolver
 import kittoku.osc.R
 import kittoku.osc.activity.MainActivity
 import kittoku.osc.preference.AppRouting
+import java.net.UnknownHostException
 
 /**
  * The algorithm sets tried one after another. VPN Gate runs SoftEther, whose IPsec server accepts
@@ -211,7 +211,7 @@ class L2tpVpnService : VpnService() {
     private fun runTunnel(config: VpnConfig, appRouting: AppRouting) {
         try {
             val address = try {
-                InetAddress.getByName(config.serverHost)
+                EndpointResolver.resolve(config.serverHost, config.connectTimeoutMs)
             } catch (e: UnknownHostException) {
                 mainHandler.post { callbacks?.onTunnelFailed(TunnelErrorKind.DNS_FAILURE, "Could not resolve the server name") }
                 return
@@ -231,13 +231,15 @@ class L2tpVpnService : VpnService() {
             )
 
             val instance = L2tpIpsecTunnel(
-                config = config,
+                // Do not perform a second DNS lookup inside the core.
+                config = config.copy(serverHost = address.hostAddress!!),
                 socketFactory = socketFactory,
                 tunProvider = tunProvider,
                 listener = tunnelListener,
                 logger = logger,
             )
             tunnel = instance
+            if (stopRequested) return // Disconnect may have arrived while DNS was pending.
 
             // Returns when the tunnel ends for any reason; failures were reported through the listener.
             instance.run()
@@ -274,6 +276,7 @@ class L2tpVpnService : VpnService() {
         } else if (worker == null) {
             stopSelf()
         } else {
+            worker?.interrupt()
             runCatching { factory?.closeAll() }
         }
     }

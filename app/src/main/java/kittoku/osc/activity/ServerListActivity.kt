@@ -1,8 +1,6 @@
 package kittoku.osc.activity
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -16,7 +14,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
@@ -25,30 +22,14 @@ import kittoku.osc.R
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.IkeProbe
 import kittoku.osc.Protocol
+import kittoku.osc.ProbeBatch
 import kittoku.osc.ProtocolSwitch
 import kittoku.osc.ServerTester
 import kittoku.osc.flagEmoji
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
-import org.json.JSONArray
 import java.util.Locale
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-
-internal data class FreeServer(
-    val host: String,
-    val port: Int,
-    val country: String,
-    val countryCode: String,
-    val speedMbps: Double,
-    val ping: Int,
-    val sessions: Int = 0,
-    val udpPort: Int = 0,
-)
-
-private val EXCLUDED_COUNTRIES = setOf("RU")
-
-private const val UI_PREFS_NAME = "banafsh_ui"
+import kotlin.concurrent.thread
 
 private enum class Quality { GOOD, MEDIUM, BAD, UNKNOWN }
 
@@ -75,6 +56,7 @@ private fun qualityOf(server: FreeServer): Quality = when {
 }
 
 private const val PENDING = -2
+private const val BATCH_TIMEOUT_MS = 12_000L
 
 // A country can have hundreds of servers: only the best ones are drawn at first.
 private const val ROWS_LIMIT = 50
@@ -93,6 +75,7 @@ class ServerListActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
+        const val EXTRA_IP = "ip"
         const val EXTRA_COUNTRY_CODE = "country_code"
         const val EXTRA_PING = "ping"
     }
@@ -102,12 +85,14 @@ class ServerListActivity : AppCompatActivity() {
     private var currentCountry: String? = null   // null: the country list is shown
     private var visible: List<Int> = emptyList() // indices of the servers of the open country
     private var showAll = false
-    private var renderPending = false
+    private var nextCatalog: List<FreeServer>? = null
+    private var loader: Thread? = null
+    private val protocol by lazy { ProtocolSwitch.get(this) }
     private var finished = 0
-    private var testing = false
+    private var batch: ProbeBatch? = null
+    private val testing get() = batch != null
     private var vpnOn = false
-    private var generation = 0
-    private var executor: ExecutorService? = null
+    private val deadline = Runnable { finishTests() }
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var tvNote: TextView
@@ -154,8 +139,8 @@ class ServerListActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        generation++
-        executor?.shutdownNow()
+        loader?.interrupt()
+        stopTests()
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
@@ -175,126 +160,32 @@ class ServerListActivity : AppCompatActivity() {
         progress.visibility = View.VISIBLE
         tvNote.text = getString(R.string.bs_load_running)
 
-        val protocol = ProtocolSwitch.get(this)
-
-        Thread {
-            val uiPrefs = getSharedPreferences(UI_PREFS_NAME, MODE_PRIVATE)
-
-            var list = try {
-                downloadFreeServers(protocol, uiPrefs)
-            } catch (e: Exception) {
-                emptyList()
-            }
-
-            // No mirror answered: the last list that was saved still works.
-            var stale = false
-
-            if (list.isEmpty()) {
-                list = parseServers(uiPrefs.getString(cacheKey(protocol), null), protocol)
-                stale = list.isNotEmpty()
-            }
-
-            // First run with no network at all: the copy that ships inside the app.
-            if (list.isEmpty()) {
-                list = parseServers(readSeed(protocol), protocol)
-                stale = list.isNotEmpty()
-            }
-
-            runOnUiThread {
-                if (isFinishing || isDestroyed) {
-                    return@runOnUiThread
-                }
-
-                progress.visibility = View.GONE
-
-                if (list.isEmpty()) {
+        val catalog = ServerCatalog(this, protocol)
+        loader = thread(name = "server-catalog") {
+            val local = catalog.local()
+            if (local.servers.isNotEmpty()) handler.post { offerCatalog(local.servers) }
+            if (local.fresh) return@thread
+            val refreshed = catalog.refresh()
+            handler.post {
+                if (isFinishing || isDestroyed) return@post
+                if (refreshed.isNotEmpty()) {
+                    offerCatalog(refreshed)
+                } else if (servers.isEmpty()) {
                     Toast.makeText(this, R.string.bs_load_failed, Toast.LENGTH_LONG).show()
                     finish()
-                    return@runOnUiThread
+                } else {
+                    Toast.makeText(this, R.string.bs_load_stale, Toast.LENGTH_SHORT).show()
                 }
-
-                if (stale) {
-                    Toast.makeText(this, R.string.bs_load_stale, Toast.LENGTH_LONG).show()
-                }
-
-                servers = list
-                results = IntArray(servers.size) { PENDING }
-                vpnOn = isVpnActive()
-
-                // Nothing is tested yet: a country is tested when it is opened.
-                showCountries()
             }
-        }.start()
-    }
-
-    private fun cacheKey(protocol: Protocol) = "servers_cache_" + protocol.listKey
-
-    private fun downloadFreeServers(protocol: Protocol, uiPrefs: SharedPreferences): List<FreeServer> {
-        for (url in listUrls(protocol)) {
-            val text = httpGetListFile(url) ?: continue
-            val parsed = parseServers(text, protocol)
-
-            if (parsed.isNotEmpty()) {
-                uiPrefs.edit().putString(cacheKey(protocol), text).apply()
-                return parsed
-            }
-        }
-
-        return emptyList()
-    }
-
-    private fun readSeed(protocol: Protocol): String? {
-        return try {
-            // L2TP keeps its own list; SSTP falls back to the short list older versions use.
-            val raw = if (protocol == Protocol.L2TP) R.raw.servers_l2tp else R.raw.servers
-            resources.openRawResource(raw).bufferedReader(Charsets.UTF_8).use { it.readText() }
-        } catch (e: Exception) {
-            null
         }
     }
 
-    private fun parseServers(text: String?, protocol: Protocol): List<FreeServer> {
-        if (text.isNullOrBlank()) {
-            return emptyList()
-        }
-
-        return try {
-            val array = JSONArray(text)
-            val result = mutableListOf<FreeServer>()
-
-            for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                val host = obj.optString("host")
-                val port = obj.optInt("port", 0)
-
-                // L2TP does not use the TCP port, so its list may leave it out.
-                if (host.isEmpty() || (protocol != Protocol.L2TP && port !in 1..65535)) {
-                    continue
-                }
-
-                // Never listed: too many sites are blocked there (the list file leaves it out too).
-                if (obj.optString("country") in EXCLUDED_COUNTRIES) {
-                    continue
-                }
-
-                result.add(
-                    FreeServer(
-                        host = host,
-                        port = port,
-                        country = obj.optString("country_name"),
-                        countryCode = obj.optString("country"),
-                        speedMbps = obj.optDouble("speed_mbps", 0.0),
-                        ping = obj.optInt("ping", 0),
-                        sessions = obj.optInt("sessions", 0),
-                        udpPort = obj.optInt("udp_port", 0),
-                    )
-                )
-            }
-
-            result
-        } catch (e: Exception) {
-            emptyList()
-        }
+    private fun offerCatalog(fresh: List<FreeServer>) {
+        if (isFinishing || isDestroyed) return
+        progress.visibility = View.GONE
+        nextCatalog = fresh
+        // Do not replace the endpoints underneath probes or a focused server. Back applies the refresh.
+        if (currentCountry == null) showCountries()
     }
 
     private fun isVpnActive(): Boolean {
@@ -314,7 +205,12 @@ class ServerListActivity : AppCompatActivity() {
 
     private fun showCountries() {
         stopTests()
-        val previous = currentCountry
+        val previous = currentCountry ?: list.findFocus()?.tag
+        nextCatalog?.let {
+            servers = it
+            results = IntArray(it.size) { PENDING }
+            nextCatalog = null
+        }
         currentCountry = null
         visible = emptyList()
 
@@ -337,73 +233,55 @@ class ServerListActivity : AppCompatActivity() {
         tvHint.visibility = View.VISIBLE
         btnTestAll.visibility = View.VISIBLE
 
+        vpnOn = isVpnActive()
         if (vpnOn) {
             // A test through the tunnel would be misleading, so only the plain list is shown.
             updateNote()
-            render()
+            render("first")
         } else {
             startTest()
         }
     }
 
     private fun stopTests() {
-        generation++
-        executor?.shutdownNow()
-        executor = null
-        testing = false
+        handler.removeCallbacks(deadline)
+        batch?.close()
+        batch = null
     }
 
-    // Ping answers arrive in bursts; drawing the list after each one would block the screen.
-    private fun scheduleRender() {
-        if (renderPending) return
-
-        renderPending = true
-        handler.postDelayed({
-            renderPending = false
-            if (!isDestroyed) render()
-        }, 500)
+    private fun finishTests() {
+        stopTests()
+        updateNote()
+        render() // rank replies once, preserving the focused server
     }
 
     private fun startTest() {
-        if (visible.isEmpty() || vpnOn) {
-            return
-        }
-
-        executor?.shutdownNow()
+        if (visible.isEmpty() || vpnOn) return
+        stopTests()
         visible.forEach { results[it] = PENDING }
         finished = 0
-        testing = true
-        generation++
-
-        val myGeneration = generation
-        // L2TP does not use the server's TCP port: it is tested with an IKE message on UDP 500.
-        val useIke = ProtocolSwitch.get(this) == Protocol.L2TP
-        val pool = Executors.newFixedThreadPool(16)
-        executor = pool
-
+        val run = ProbeBatch()
+        batch = run
+        val useIke = protocol == Protocol.L2TP
         updateNote()
-        render()
+        render(list.findFocus()?.tag ?: "first")
+        handler.postDelayed(deadline, BATCH_TIMEOUT_MS)
 
         visible.forEach { index ->
             val server = servers[index]
-
-            pool.execute {
-                val ms = if (useIke) IkeProbe.test(server.host) else ServerTester.test(server.host, server.port)
-
+            run.execute {
+                val ms = if (useIke) IkeProbe.test(server.endpoint, run) else ServerTester.test(server.endpoint, server.port, run)
                 handler.post {
-                    if (myGeneration != generation) {
-                        return@post
-                    }
-
+                    if (batch !== run) return@post
                     results[index] = ms
                     finished++
-
-                    if (finished >= visible.size) {
-                        testing = false
+                    if (finished == visible.size) {
+                        finishTests()
+                    } else {
+                        updateNote()
+                        // Keep the actual focused view alive between D-pad key down and key up.
+                        list.findViewWithTag<View>(index)?.let { bindPing(it, ms) }
                     }
-
-                    updateNote()
-                    if (testing) scheduleRender() else render()
                 }
             }
         }
@@ -421,6 +299,7 @@ class ServerListActivity : AppCompatActivity() {
         tvNote.text = when {
             vpnOn -> getString(R.string.bs_test_vpn_on)
             testing -> getString(R.string.bs_test_running, finished, visible.size)
+            finished < visible.size -> getString(R.string.tv_test_deadline, ok, visible.size - finished)
             ok == 0 -> getString(R.string.bs_test_none)
             else -> getString(R.string.bs_test_done, ok)
         }
@@ -486,7 +365,7 @@ class ServerListActivity : AppCompatActivity() {
             val row = layoutInflater.inflate(R.layout.item_country, list, false)
 
             // The country that holds the server in use is marked, so it is easy to find among the others.
-            if (currentHost.isNotEmpty() && indices.any { servers[it].host == currentHost }) {
+            if (currentHost.isNotEmpty() && indices.any { servers[it].endpoint.host == currentHost }) {
                 row.findViewById<TextView>(R.id.tvCountryCurrent).apply {
                     setText(R.string.bs_current_here)
                     visibility = View.VISIBLE
@@ -513,7 +392,7 @@ class ServerListActivity : AppCompatActivity() {
         val currentHost = currentHost()
 
         val order = visible.sortedWith(
-            compareBy<Int> { if (servers[it].host == currentHost) 0 else 1 } // the server in use stays on top
+            compareBy<Int> { if (servers[it].endpoint.host == currentHost) 0 else 1 } // the server in use stays on top
             .thenBy {
                 when {
                     results[it] > 0 -> 0
@@ -525,14 +404,11 @@ class ServerListActivity : AppCompatActivity() {
                 .thenBy { if (results[it] > 0) results[it].toDouble() else -shareOf(servers[it]) }
         )
 
-        val purple = getColor(R.color.banafsh_purple)
-        val greyButton = getColor(R.color.bs_ink_mute)
-
         val shown = if (showAll || order.size <= ROWS_LIMIT) order else order.take(ROWS_LIMIT).toMutableList().apply {
             // Do not evict the focused server when faster ones enter the first page.
             if (focusedIndex != null && focusedIndex in order && focusedIndex !in this) add(focusedIndex)
         }
-        val showPort = ProtocolSwitch.get(this) == Protocol.SSTP
+        val showPort = protocol == Protocol.SSTP
 
         for (index in shown) {
             val server = servers[index]
@@ -540,10 +416,10 @@ class ServerListActivity : AppCompatActivity() {
             val row = layoutInflater.inflate(R.layout.item_free_server, list, false)
 
             row.findViewById<TextView>(R.id.tvTitle).text =
-                "${flagEmoji(server.countryCode)} ${countryName(server)} · ${shortName(server.host)}".trim()
+                "${flagEmoji(server.countryCode)} ${countryName(server)} · ${shortName(server.endpoint.host)}".trim()
 
             // The server in use is framed and tagged: the names look alike, so it is easy to pick it again by mistake.
-            val isCurrent = server.host == currentHost
+            val isCurrent = server.endpoint.host == currentHost
             val tvCurrent = row.findViewById<TextView>(R.id.tvCurrent)
             val tvPort = row.findViewById<TextView>(R.id.tvPort)
 
@@ -592,56 +468,9 @@ class ServerListActivity : AppCompatActivity() {
                 }
             }
 
-            val pill = row.findViewById<View>(R.id.pill)
-            val pillDot = row.findViewById<View>(R.id.dotState)
-            val pillText = row.findViewById<TextView>(R.id.tvPing)
-            val button = row.findViewById<MaterialButton>(R.id.btnConnect)
-
-            when {
-                vpnOn -> {
-                    // Not tested: no light, the button is simply available.
-                    pill.visibility = View.GONE
-                    button.backgroundTintList = ColorStateList.valueOf(purple)
-                }
-
-                result > 0 -> {
-                    pill.background = pill(0xFFDDF7E8.toInt())
-                    pillDot.background = dot(0xFF2ECC71.toInt())
-                    pillText.setTextColor(0xFF0B6B30.toInt())
-                    pillText.text = getString(R.string.bs_ping_ms, result) + " ✓"
-                    button.backgroundTintList = ColorStateList.valueOf(purple)
-                }
-
-                result == ServerTester.FAILED -> {
-                    pill.background = pill(0xFFFDE7E7.toInt())
-                    pillDot.background = dot(0xFFE5484D.toInt())
-                    pillText.setTextColor(0xFF8A1C1C.toInt())
-                    pillText.text = getString(R.string.bs_server_failed) + " ✕"
-                    button.backgroundTintList = ColorStateList.valueOf(greyButton)
-                }
-
-                else -> {
-                    pill.background = pill(0xFFECE8F7.toInt())
-                    pillDot.background = dot(0xFF9E9E9E.toInt())
-                    pillText.setTextColor(0xFF5B4A8C.toInt())
-                    pillText.text = getString(R.string.bs_pill_testing)
-                    button.backgroundTintList = ColorStateList.valueOf(greyButton)
-                }
-            }
-
+            bindPing(row, result)
             row.tag = index
-            row.setOnClickListener {
-                if (!vpnOn && result <= 0) {
-                    AlertDialog.Builder(this)
-                        .setMessage(if (result == PENDING) R.string.tv_connect_untested else R.string.bs_connect_anyway)
-                        .setPositiveButton(R.string.bs_connect) { _, _ -> choose(server) }
-                        .setNegativeButton(R.string.bs_cancel, null)
-                        .show()
-                } else {
-                    choose(server)
-                }
-            }
-
+            row.setOnClickListener { choose(index) }
             list.addView(row)
         }
 
@@ -657,17 +486,51 @@ class ServerListActivity : AppCompatActivity() {
         }
     }
 
-    private fun choose(server: FreeServer) {
-        generation++
-        executor?.shutdownNow()
+    private fun bindPing(row: View, result: Int) {
+        val pill = row.findViewById<View>(R.id.pill)
+        val pillDot = row.findViewById<View>(R.id.dotState)
+        val pillText = row.findViewById<TextView>(R.id.tvPing)
 
+        when {
+            vpnOn -> {
+                // Not tested: no light, the button is simply available.
+                pill.visibility = View.GONE
+            }
+
+            result > 0 -> {
+                pill.background = pill(0xFFDDF7E8.toInt())
+                pillDot.background = dot(0xFF2ECC71.toInt())
+                pillText.setTextColor(0xFF0B6B30.toInt())
+                pillText.text = getString(R.string.bs_ping_ms, result) + " ✓"
+            }
+
+            result == ServerTester.FAILED -> {
+                pill.background = pill(0xFFFDE7E7.toInt())
+                pillDot.background = dot(0xFFE5484D.toInt())
+                pillText.setTextColor(0xFF8A1C1C.toInt())
+                pillText.text = getString(R.string.bs_server_failed) + " ✕"
+            }
+
+            else -> {
+                pill.background = pill(0xFFECE8F7.toInt())
+                pillDot.background = dot(0xFF9E9E9E.toInt())
+                pillText.setTextColor(0xFF5B4A8C.toInt())
+                pillText.setText(if (testing) R.string.bs_pill_testing else R.string.tv_not_tested)
+            }
+        }
+    }
+
+    private fun choose(index: Int) {
+        val server = servers[index]
+        stopTests()
         setResult(
             RESULT_OK,
             android.content.Intent()
-                .putExtra(EXTRA_HOST, server.host)
+                .putExtra(EXTRA_HOST, server.endpoint.host)
+                .putExtra(EXTRA_IP, server.endpoint.ip)
                 .putExtra(EXTRA_PORT, server.port)
                 .putExtra(EXTRA_COUNTRY_CODE, server.countryCode)
-                .putExtra(EXTRA_PING, servers.indexOf(server).let { if (it >= 0 && results[it] > 0) results[it] else 0 })
+                .putExtra(EXTRA_PING, if (vpnOn) 0 else results[index].coerceAtLeast(0))
         )
         finish()
     }

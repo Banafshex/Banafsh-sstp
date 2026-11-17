@@ -118,5 +118,6 @@
         android:text="@string/bs_connect"
         android:textColor="@color/bs_bg"
         android:textStyle="bold"
+        app:backgroundTint="@color/banafsh_purple"
         app:cornerRadius="22dp" />
 </LinearLayout>

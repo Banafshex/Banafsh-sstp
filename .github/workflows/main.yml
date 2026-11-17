@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       test_on_tv:
-        description: Run the remote-navigation smoke tests on an Android TV emulator
+        description: Test remote navigation and the connection flow on an Android TV emulator
         type: boolean
         default: false
 
@@ -19,10 +19,13 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v5
       - run: bash gradlew :app:testDebugUnitTest :app:assembleDebug
-      - uses: actions/upload-artifact@v4
+      - name: Prepare installable TV APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/Banafsh-TV-debug.apk"
+      - uses: actions/upload-artifact@v7
         with:
-          name: Banafsh-TV-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: ${{ runner.temp }}/Banafsh-TV-debug.apk
+          archive: false
+          if-no-files-found: error
       - name: Compile TV smoke tests
         if: inputs.test_on_tv
         run: bash gradlew :app:assembleDebugAndroidTest
@@ -40,7 +43,7 @@ jobs:
           target: android-tv
           arch: x86
           profile: tv_1080p
-          script: bash gradlew :app:connectedDebugAndroidTest
+          script: bash gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.loopbackTunnel=true
       - name: Report TV test failures
         if: failure() && inputs.test_on_tv
         run: |

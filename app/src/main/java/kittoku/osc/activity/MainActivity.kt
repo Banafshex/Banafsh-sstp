@@ -27,6 +27,8 @@ import androidx.core.content.ContextCompat
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceManager
 import java.io.BufferedOutputStream
+import kittoku.osc.CatalogSelection
+import kittoku.osc.ServerEndpoint
 import kittoku.osc.BuildConfig
 import kittoku.osc.DnsDialog
 import kittoku.osc.NewsChecker
@@ -64,6 +66,8 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("banafsh_ui", MODE_PRIVATE)
     }
 
+    private val selection by lazy { CatalogSelection(this) }
+
     private val dialogResource: Int by lazy { EditTextPreference(this).dialogLayoutResource }
 
     private val profileLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -71,6 +75,7 @@ class MainActivity : AppCompatActivity() {
             return@registerForActivityResult
         }
 
+        selection.clear()
         updatePreferenceView()
     }
 
@@ -262,6 +267,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this).also {
             it.setMessage(R.string.bs_reload_msg)
             it.setPositiveButton(R.string.bs_yes) { _, _ ->
+                selection.clear()
                 importProfile(null, prefs)
                 updatePreferenceView()
 
@@ -312,6 +318,7 @@ class MainActivity : AppCompatActivity() {
             it.setTitle(R.string.bs_config_title)
             it.setMessage(message)
             it.setPositiveButton(R.string.bs_config_use) { _, _ ->
+                selection.clear()
                 importProfile(profile, prefs)
                 updatePreferenceView()
 
@@ -337,7 +344,8 @@ class MainActivity : AppCompatActivity() {
         val ping = data.getIntExtra(ServerListActivity.EXTRA_PING, 0)
 
         if (host.isNotEmpty()) {
-            applyFreeServer(FreeServer(host, port, "", countryCode, 0.0, ping))
+            val endpoint = ServerEndpoint(host, data.getStringExtra(ServerListActivity.EXTRA_IP))
+            applyFreeServer(endpoint, port, countryCode, ping)
         }
     }
 
@@ -345,56 +353,22 @@ class MainActivity : AppCompatActivity() {
         freeServerLauncher.launch(Intent(this, ServerListActivity::class.java))
     }
 
-    private fun JSONObject.section(name: String): JSONObject {
-        return optJSONObject(name) ?: JSONObject().also { put(name, it) }
+    private fun applyServerSettings(host: String, port: Int, user: String, pass: String, disableVerify: Boolean) {
+        // Change just the selected endpoint, atomically, not the whole profile/routing policy.
+        prefs.edit().apply {
+            putString(OscPrefKey.HOME_HOSTNAME.name, host)
+            putString(OscPrefKey.HOME_USERNAME.name, user)
+            putString(OscPrefKey.HOME_PASSWORD.name, pass)
+            putString(OscPrefKey.SSL_PORT.name, port.toString())
+            if (disableVerify) putBoolean(OscPrefKey.SSL_DO_VERIFY.name, false)
+        }.apply()
     }
 
-    private fun applyServerSettings(host: String, port: Int, user: String, pass: String, disableVerify: Boolean): Boolean {
-        uiPrefs.edit().remove("server_ping").apply() // a server entered by hand has no measured ping
-        val profile = try {
-            val json = JSONObject(serializeProfile(prefs))
-
-            json.section("stringSetting").also {
-                it.put("HOME_HOSTNAME", host)
-                it.put("HOME_USERNAME", user)
-                it.put("HOME_PASSWORD", pass)
-            }
-            json.section("intSetting").put("SSL_PORT", port)
-            if (disableVerify) {
-                json.section("booleanSetting").put("SSL_DO_VERIFY", false)
-            }
-
-            deserializeProfile(json.toString())
-        } catch (e: Exception) {
-            null
-        }
-
-        if (profile == null) {
-            return false
-        }
-
-        importProfile(profile, prefs)
-        return true
-    }
-
-    private fun applyFreeServer(server: FreeServer) {
-        // L2TP does not use the TCP port, so its list may leave it out: keep the stored port valid anyway.
-        val port = if (server.port in 1..65535) server.port else 443
-
-        if (!applyServerSettings(server.host, port, "vpn", "vpn", true)) {
-            Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        uiPrefs.edit()
-            .putString("server_host", server.host)
-            .putString("server_country", server.countryCode)
-            .putString("server_list", ProtocolSwitch.get(this).listKey) // the list this server was picked from
-            .putInt("server_ping", server.ping)
-            .apply()
-        updatePreferenceView()
-
-        Toast.makeText(this, getString(R.string.bs_server_set_connecting, server.host), Toast.LENGTH_LONG).show()
+    private fun applyFreeServer(endpoint: ServerEndpoint, port: Int, country: String, measuredPing: Int) {
+        // The L2TP list need not supply a TCP port.
+        applyServerSettings(endpoint.host, port.takeIf { it in 1..65535 } ?: 443, "vpn", "vpn", true)
+        selection.save(endpoint, country, ProtocolSwitch.get(this), measuredPing)
+        Toast.makeText(this, getString(R.string.bs_server_set_connecting, endpoint.host), Toast.LENGTH_SHORT).show()
         connectNow()
     }
 
@@ -428,11 +402,10 @@ class MainActivity : AppCompatActivity() {
                     host.isEmpty() -> etHost.error = getString(R.string.bs_err_address)
                     port == null || port !in 1..65535 -> etPort.error = getString(R.string.bs_err_port)
                     else -> {
-                        if (applyServerSettings(host, port, etUser.text.toString(), etPass.text.toString(), false)) {
-                            uiPrefs.edit().remove("server_list").apply() // typed by hand: any service may use it
-                            Toast.makeText(this, R.string.bs_saved, Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                        }
+                        selection.clear() // even if the manually entered hostname is the same
+                        applyServerSettings(host, port, etUser.text.toString(), etPass.text.toString(), false)
+                        Toast.makeText(this, R.string.bs_saved, Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
                     }
                 }
             }
@@ -490,13 +463,13 @@ class MainActivity : AppCompatActivity() {
 
     // A server picked from the list of one service is not offered to the other one.
     private fun serverMatchesService(): Boolean {
-        val marker = uiPrefs.getString("server_list", null) ?: return true
+        val marker = selection.listFor(getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)) ?: return true
         return marker == ProtocolSwitch.get(this).listKey
     }
 
     private fun clearListServer() {
         setStringPrefValue("", OscPrefKey.HOME_HOSTNAME, prefs)
-        uiPrefs.edit().remove("server_host").remove("server_country").remove("server_list").apply()
+        selection.clear()
         updatePreferenceView()
     }
 
@@ -517,13 +490,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         Thread {
-            val hosts = fetchServerHosts(protocol) // null: the list could not be loaded
+            // Consult the same cached/bundled list as the picker. Protocol switching must not wait on mirrors.
+            val server = ServerCatalog(this, protocol).local().servers.firstOrNull { it.endpoint.host == host }
 
             runOnUiThread {
-                if (isFinishing || isDestroyed || ProtocolSwitch.get(this) != protocol) return@runOnUiThread
-
-                if (hosts != null && host in hosts) {
-                    uiPrefs.edit().putString("server_list", protocol.listKey).apply()
+                if (isFinishing || isDestroyed || ProtocolSwitch.get(this) != protocol ||
+                    getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs) != host) return@runOnUiThread
+                if (serverMatchesService()) {
+                    onSame()
+                } else if (server != null) {
+                    if (protocol == Protocol.SSTP) {
+                        prefs.edit().putString(OscPrefKey.SSL_PORT.name, server.port.toString()).apply()
+                    }
+                    selection.save(server.endpoint, server.countryCode, protocol, 0)
                     onSame()
                 } else {
                     clearListServer()
@@ -550,6 +529,8 @@ class MainActivity : AppCompatActivity() {
     private val vpnPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             startVpnService()
+        } else {
+            Toast.makeText(this, R.string.tv_vpn_consent_needed, Toast.LENGTH_LONG).show()
         }
     }
 
