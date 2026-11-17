@@ -12,17 +12,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - run: bash gradlew :app:testDebugUnitTest :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Banafsh-TV-debug
           path: app/build/outputs/apk/debug/*.apk
+      - name: Compile TV smoke tests
+        if: inputs.test_on_tv
+        run: bash gradlew :app:assembleDebugAndroidTest
       - name: Enable KVM
         if: inputs.test_on_tv
         run: |
@@ -38,3 +41,21 @@ jobs:
           arch: x86
           profile: tv_1080p
           script: bash gradlew :app:connectedDebugAndroidTest
+      - name: Report TV test failures
+        if: failure() && inputs.test_on_tv
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          for report in Path('app/build/outputs/androidTest-results').rglob('TEST-*.xml'):
+              for case in ET.parse(report).iter('testcase'):
+                  for error in case.findall('failure') + case.findall('error'):
+                      message = error.get('message') or error.text or 'Test failed'
+                      print(f"::error title={case.get('name')}::{message[:1800].replace('%', '%25').replace(chr(10), '%0A')}")
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: failure() && inputs.test_on_tv
+        with:
+          name: Android-TV-test-report
+          path: app/build/reports/androidTests/connected/
+          if-no-files-found: ignore
