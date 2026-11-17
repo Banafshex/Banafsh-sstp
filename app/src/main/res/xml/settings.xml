@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/tv_split_title">
+        <SwitchPreferenceCompat
+            android:key="ROUTE_DO_ENABLE_APP_BASED_RULE"
+            android:defaultValue="false"
+            android:title="@string/tv_split_enable"
+            android:summary="@string/tv_split_next" />
+        <ListPreference
+            android:key="ROUTE_APP_LIST_TYPE"
+            android:dependency="ROUTE_DO_ENABLE_APP_BASED_RULE"
+            android:entries="@array/tv_routing_modes"
+            android:title="@string/tv_split_mode"
+            app:useSimpleSummaryProvider="true" />
+        <Preference
+            android:key="ROUTE_SELECTED_APPS"
+            android:dependency="ROUTE_DO_ENABLE_APP_BASED_RULE"
+            android:persistent="false"
+            android:title="@string/tv_choose_apps" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/bs_set_connection">
         <Preference
             android:key="CONNECTION_LOG"
@@ -10,14 +29,6 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/bs_set_appearance">
-        <ListPreference
-            android:key="THEME_MODE"
-            app:isPreferenceVisible="false"
-            android:title="@string/bs_set_theme"
-            android:entries="@array/bs_theme_entries"
-            android:entryValues="@array/bs_theme_values"
-            android:defaultValue="system"
-            app:useSimpleSummaryProvider="true"/>
         <ListPreference
             android:key="LANGUAGE"
             android:persistent="false"
@@ -39,11 +50,6 @@
         <kittoku.osc.preference.custom.ProxyPortPreference android:key="PROXY_PORT"/>
         <kittoku.osc.preference.custom.ProxyUsernamePreference android:key="PROXY_USERNAME"/>
         <kittoku.osc.preference.custom.ProxyPasswordPreference android:key="PROXY_PASSWORD"/>
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/bs_set_routing" app:isPreferenceVisible="false">
-        <kittoku.osc.preference.custom.RouteDoEnableAppBasedRulePreference android:key="ROUTE_DO_ENABLE_APP_BASED_RULE" app:isPreferenceVisible="false"/>
-        <kittoku.osc.preference.custom.RouteSelectedAppsPreference android:key="ROUTE_SELECTED_APPS" app:isPreferenceVisible="false"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="BANAFSHX">

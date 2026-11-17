@@ -27,7 +27,7 @@ internal enum class Protocol(val id: String, val engine: Engine, val listKey: St
     }
 }
 
-/** Starts and stops the tunnel with whichever service is selected. Used by the home screen and the tile. */
+/** Starts and stops the tunnel with whichever service is selected. */
 internal object ProtocolSwitch {
     private const val KEY_PROTOCOL = "protocol"
     private const val SWITCH_DELAY_MS = 2000L

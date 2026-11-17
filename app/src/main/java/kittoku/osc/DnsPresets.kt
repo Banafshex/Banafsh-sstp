@@ -91,8 +91,7 @@ internal object DnsDialog {
             card.findViewById<TextView>(R.id.tvProtoDesc).text = description
             card.findViewById<ImageView>(R.id.ivProtoCheck).visibility =
                 if (selected) android.view.View.VISIBLE else android.view.View.INVISIBLE
-            card.strokeColor = ContextCompat.getColor(activity, if (selected) R.color.bs_dialog_link else R.color.bs_dialog_stroke)
-            card.strokeWidth = ((if (selected) 2 else 1) * density).toInt()
+            card.isActivated = selected
 
             card.setOnClickListener {
                 dialog?.dismiss()

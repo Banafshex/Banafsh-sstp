@@ -42,7 +42,7 @@ internal object GlassDialog {
         if (body != null) bodyView.text = body else bodyView.visibility = View.GONE
         content?.let { view.findViewById<LinearLayout>(R.id.gdContent).addView(it) }
 
-        view.findViewById<MaxHeightScrollView>(R.id.gdScroll).maxHeightPx = (metrics.heightPixels * 0.5f).toInt()
+        view.findViewById<MaxHeightScrollView>(R.id.gdScroll).maxHeightPx = (metrics.heightPixels * 0.44f).toInt()
 
         var primaryClicked = false
         val primary = view.findViewById<MaterialButton>(R.id.gdPrimary)
@@ -79,7 +79,7 @@ internal object GlassDialog {
             window.setDimAmount(0.55f)
 
             val margin = (20 * metrics.density).toInt()
-            val maxWidth = (380 * metrics.density).toInt()
+            val maxWidth = (560 * metrics.density).toInt()
             window.setLayout(minOf(metrics.widthPixels - 2 * margin, maxWidth), WindowManager.LayoutParams.WRAP_CONTENT)
 
             if (Build.VERSION.SDK_INT >= 31) {

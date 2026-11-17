@@ -7,7 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.os.Build
 import android.widget.Toast
-import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -25,7 +25,7 @@ internal data class ReleaseInfo(
 internal class LatestResult(val ok: Boolean, val info: ReleaseInfo?)
 
 internal object UpdateChecker {
-    private const val API_URL = "https://api.github.com/repos/Banafshex/Banafsh-sstp/releases/latest"
+    private const val API_URL = "https://api.github.com/repos/Banafshex/Banafsh-sstp/releases?per_page=100"
     const val RELEASES_PAGE = "https://github.com/Banafshex/Banafsh-sstp/releases"
 
     fun httpGet(address: String, accept: String? = null): String? {
@@ -52,44 +52,32 @@ internal object UpdateChecker {
         val text = httpGet(API_URL, "application/vnd.github+json") ?: return LatestResult(false, null)
 
         return try {
-            val json = JSONObject(text)
-
-            // Only stable releases are offered to everybody.
-            if (json.optBoolean("draft") || json.optBoolean("prerelease")) {
-                return LatestResult(true, null)
-            }
-
-            val assets = json.getJSONArray("assets")
-            var url = ""
-            var size = 0L
-
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-
-                if (asset.getString("name").endsWith(".apk")) {
-                    url = asset.getString("browser_download_url")
-                    size = asset.optLong("size")
-                    break
-                }
-            }
-
-            if (url.isEmpty()) {
-                LatestResult(true, null)
-            } else {
-                LatestResult(
-                    true,
-                    ReleaseInfo(
-                        json.getString("tag_name").removePrefix("v"),
-                        json.optString("body"),
-                        url,
-                        size,
-                        json.optString("html_url", RELEASES_PAGE)
-                    )
-                )
-            }
-        } catch (e: Exception) {
+            LatestResult(true, latestTvRelease(JSONArray(text)))
+        } catch (_: Exception) {
             LatestResult(false, null)
         }
+    }
+
+    // The phone edition shares this repository. Never offer its APK as an update on TV.
+    internal fun latestTvRelease(releases: JSONArray): ReleaseInfo? {
+        var newest: ReleaseInfo? = null
+        for (i in 0 until releases.length()) {
+            val release = releases.optJSONObject(i) ?: continue
+            if (release.optBoolean("draft") || release.optBoolean("prerelease")) continue
+            val tag = release.optString("tag_name")
+            if (!tag.startsWith("tv-v")) continue
+            val version = tag.removePrefix("tv-v")
+            if (newest != null && !isNewer(version, newest.version)) continue
+            val assets = release.optJSONArray("assets") ?: continue
+            for (j in 0 until assets.length()) {
+                val asset = assets.optJSONObject(j) ?: continue
+                if (asset.optString("name") != "Banafsh-TV-$version.apk") continue
+                newest = ReleaseInfo(version, release.optString("body"), asset.getString("browser_download_url"),
+                    asset.optLong("size"), release.optString("html_url", RELEASES_PAGE))
+                break
+            }
+        }
+        return newest
     }
 
     private fun parseVersion(version: String): Pair<List<Int>, Boolean> {
@@ -133,7 +121,7 @@ internal object UpdateChecker {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
 
-        val file = File(dir, "Banafsh-sstp-${info.version}.apk")
+        val file = File(dir, "Banafsh-TV-${info.version}.apk")
         var connection: HttpURLConnection? = null
 
         try {

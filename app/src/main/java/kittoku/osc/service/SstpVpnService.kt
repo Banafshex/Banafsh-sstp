@@ -5,7 +5,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -16,7 +15,6 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.VpnService
 import android.os.Build
-import android.service.quicksettings.TileService
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -96,14 +94,6 @@ internal class SstpVpnService : VpnService() {
         setBooleanPrefValue(state, OscPrefKey.ROOT_STATE, prefs)
     }
 
-    private fun requestTileListening() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            TileService.requestListeningState(this,
-                ComponentName(this, SstpTileService::class.java)
-            )
-        }
-    }
-
     companion object {
         // False after the process was killed, so the screen can tell a stale "connected" state.
         @Volatile
@@ -121,7 +111,6 @@ internal class SstpVpnService : VpnService() {
                 val newState = getBooleanPrefValue(OscPrefKey.ROOT_STATE, prefs)
 
                 setBooleanPrefValue(newState, OscPrefKey.HOME_CONNECTOR, prefs)
-                requestTileListening()
             }
         }
 

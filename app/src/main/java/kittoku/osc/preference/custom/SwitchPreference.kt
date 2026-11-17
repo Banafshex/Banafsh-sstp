@@ -65,18 +65,6 @@ internal class RouteDoAddCustomRoutesPreference(context: Context, attrs: Attribu
     override val preferenceTitle = "Add Custom Routes"
 }
 
-internal class RouteDoEnableAppBasedRulePreference(context: Context, attrs: AttributeSet) : SwitchPreference(context, attrs) {
-    override val oscPrefKey = OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE
-    override val parentKey: OscPrefKey? = null
-    override val preferenceTitle = "Enable App-Based Rule"
-}
-
-internal class RouteDoShowBackgroundAppsPreference(context: Context, attrs: AttributeSet) : SwitchPreference(context, attrs) {
-    override val oscPrefKey = OscPrefKey.ROUTE_DO_SHOW_BACKGROUND_APPS
-    override val parentKey: OscPrefKey? = null
-    override val preferenceTitle = "Show Background Apps"
-}
-
 internal class ReconnectionEnabledPreference(context: Context, attrs: AttributeSet) : SwitchPreference(context, attrs) {
     override val oscPrefKey = OscPrefKey.RECONNECTION_ENABLED
     override val parentKey: OscPrefKey? = null

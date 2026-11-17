@@ -7,9 +7,8 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import kittoku.osc.SharedBridge
+import kittoku.osc.preference.AppRouting
 import kittoku.osc.preference.OscPrefKey
-import kittoku.osc.preference.accessor.getBooleanPrefValue
-import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.setStringPrefValue
 
 
@@ -78,10 +77,9 @@ internal class NetworkObserver(val bridge: SharedBridge) {
         }
         summary.add("")
 
-        val doEnableAppBasedRule = getBooleanPrefValue(OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, bridge.prefs)
-        if (doEnableAppBasedRule) {
-            summary.add("[${getStringPrefValue(OscPrefKey.ROUTE_APP_LIST_TYPE, bridge.prefs)}]")
-            bridge.selectedApps.forEach { summary.add(it.label) }
+        if (bridge.appRouting.mode != AppRouting.Mode.ALL) {
+            summary.add("[${bridge.appRouting.mode}]")
+            summary.addAll(bridge.appRouting.packages.sorted())
         }
 
         summary.reduce { acc, s ->

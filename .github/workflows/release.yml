@@ -1,4 +1,4 @@
-name: Release APK
+name: Release Android TV APK
 
 on:
   workflow_dispatch:
@@ -45,19 +45,19 @@ jobs:
         env:
           VERSION_NAME: ${{ inputs.version }}
         run: |
-          cp app/build/outputs/apk/release/app-release.apk "Banafsh-sstp-${VERSION_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "Banafsh-TV-${VERSION_NAME}.apk"
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION_NAME: ${{ inputs.version }}
         run: |
-          NOTES_FILE="release_notes/${VERSION_NAME}.md"
+          NOTES_FILE="release_notes/tv-${VERSION_NAME}.md"
           {
             if [ -f "$NOTES_FILE" ]; then
               cat "$NOTES_FILE"
             else
-              echo "Banafsh-sstp ${VERSION_NAME}"
+              echo "Banafsh TV ${VERSION_NAME}"
             fi
             printf '\n\n---\n'
             echo "هنگام نصب، Google Play Protect ممکن است هشدار بدهد؛ گزینه‌ی Install anyway را بزنید."
@@ -69,8 +69,8 @@ jobs:
             *-*) FLAGS="--prerelease" ;;
           esac
 
-          gh release create "v${VERSION_NAME}" "Banafsh-sstp-${VERSION_NAME}.apk" \
-            --title "Banafsh-sstp ${VERSION_NAME}" \
+          gh release create "tv-v${VERSION_NAME}" "Banafsh-TV-${VERSION_NAME}.apk" \
+            --title "Banafsh TV ${VERSION_NAME}" \
             --notes-file release_body.md \
-            --target "$GITHUB_SHA" \
+            --target "$GITHUB_SHA" --latest=false \
             $FLAGS

@@ -1,15 +1,12 @@
 package kittoku.osc.fragment
 
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.content.SharedPreferences
 import android.graphics.PorterDuff
-import android.content.Intent
 import android.net.TrafficStats
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,22 +17,14 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
-import androidx.appcompat.app.AppCompatActivity
-import kittoku.osc.IranApps
-import kittoku.osc.IranRanges
-import kittoku.osc.NewsChecker
-import kittoku.osc.NewsItem
+import java.util.Locale
 import kittoku.osc.Protocol
 import kittoku.osc.ProtocolSwitch
 import kittoku.osc.R
-import kittoku.osc.activity.BypassAppsActivity
 import kittoku.osc.activity.MainActivity
-import kittoku.osc.activity.UpdateUi
 import kittoku.osc.flagEmoji
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
@@ -43,9 +32,7 @@ import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
 import kittoku.osc.preference.accessor.setStringPrefValue
-import kittoku.osc.service.SstpVpnService
 import kittoku.osc.service.PREF_WAITING_NETWORK
-import java.util.Locale
 
 internal class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var prefs: SharedPreferences
@@ -57,44 +44,31 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         view?.post { refresh() }
     }
 
-    private var shortcuts: ShortcutsCard? = null
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         uiPrefs = requireContext().getSharedPreferences("banafsh_ui", android.content.Context.MODE_PRIVATE)
-        shortcuts = ShortcutsCard(this, view)
 
         view.findViewById<View>(R.id.btnConnect).setOnClickListener {
             (activity as? MainActivity)?.toggleConnection()
         }
-        // A tap opens the server list; a long press (or the menu) enters a server by hand.
-        view.findViewById<View>(R.id.cardServer).apply {
-            setOnClickListener { (activity as? MainActivity)?.showFreeConfig() }
-            setOnLongClickListener {
-                (activity as? MainActivity)?.showServerDialog()
-                true
-            }
+        view.findViewById<View>(R.id.cardServer).setOnClickListener {
+            (activity as? MainActivity)?.showFreeConfig()
         }
         view.findViewById<View>(R.id.cardProtocol).setOnClickListener {
             (activity as? MainActivity)?.showProtocolDialog()
         }
-        view.findViewById<View>(R.id.btnManageApps).setOnClickListener {
-            startActivity(Intent(requireContext(), BypassAppsActivity::class.java))
+        view.findViewById<View>(R.id.cardSettings).setOnClickListener {
+            (activity as? MainActivity)?.openSettings()
         }
-        view.findViewById<SwitchMaterial>(R.id.swSites).setOnCheckedChangeListener { _, checked ->
-            prefs.edit().putBoolean(IranRanges.KEY_ENABLED, checked).apply()
-
-            if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
-                Toast.makeText(requireContext(), R.string.bs_nv_sites_next, Toast.LENGTH_LONG).show()
-            }
+        val connect = view.findViewById<View>(R.id.btnConnect)
+        // D-pad toward the options column always lands on the server picker, in either language.
+        val rtl = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
+        if (rtl) connect.nextFocusLeftId = R.id.cardServer else connect.nextFocusRightId = R.id.cardServer
+        for (id in listOf(R.id.cardServer, R.id.cardProtocol, R.id.cardSettings)) {
+            val row = view.findViewById<View>(id)
+            if (rtl) row.nextFocusRightId = connect.id else row.nextFocusLeftId = connect.id
         }
-        view.findViewById<SwitchMaterial>(R.id.swBypass).setOnCheckedChangeListener { _, checked ->
-            prefs.edit().putBoolean(IranApps.KEY_ENABLED, checked).apply()
-
-            if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
-                Toast.makeText(requireContext(), R.string.bs_bypass_reconnect, Toast.LENGTH_LONG).show()
-            }
-        }
+        if (savedInstanceState == null) connect.requestFocus()
     }
 
     override fun onStart() {
@@ -109,7 +83,6 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         lastState = -1
-        shortcuts?.refresh()
         refresh()
     }
 
@@ -133,20 +106,6 @@ internal class HomeFragment : Fragment(R.layout.fragment_home) {
             on && established -> 2
             on -> 1
             else -> 0
-        }
-
-        v.findViewById<SwitchMaterial>(R.id.swBypass).apply {
-            val enabled = prefs.getBoolean(IranApps.KEY_ENABLED, true)
-            if (isChecked != enabled) {
-                isChecked = enabled
-            }
-        }
-
-        v.findViewById<SwitchMaterial>(R.id.swSites).apply {
-            val enabled = prefs.getBoolean(IranRanges.KEY_ENABLED, false)
-            if (isChecked != enabled) {
-                isChecked = enabled
-            }
         }
 
         val accent = ContextCompat.getColor(ctx, R.color.bs_accent)

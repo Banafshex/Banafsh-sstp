@@ -22,7 +22,6 @@ import kittoku.osc.l2tp.L2tpVpnService
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
-import kittoku.osc.preference.accessor.getSetPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.getURIPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
@@ -58,7 +57,7 @@ private class L2tpLogSink(private val writer: LogWriter) {
 
 /**
  * Connects the experimental L2TP/IPsec tunnel to the screens the other protocols use: it writes the
- * preferences the home screen and the tile watch (ROOT_STATE, HOME_CONNECTOR, HOME_STATUS), tries
+ * preferences the home screen watches (ROOT_STATE, HOME_CONNECTOR, HOME_STATUS), tries
  * the next algorithm set when a server refuses the first, repeats the connection after a drop, and
  * writes a log file next to the SSTP one.
  */
@@ -215,15 +214,12 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
 
         try {
             val host = getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs)
-            val spec = routeSpec(app, prefs)
-            L2tpVpnService.routeSpec = spec
-            val excluded = excludedApps(prefs)
             val proposal = L2tpProposals.all[proposalIndex]
             val dns = DnsPresets.addresses(prefs).joinToString(",")
 
             log(
                 "Attempt $attempt: $host, user=vpn, algorithms: ${proposal.name} (set ${proposalIndex + 1} of ${L2tpProposals.all.size}), " +
-                    "routes=${spec.routes.size}, excludedRoutes=${spec.excludedRoutes.size}, bypassApps=${excluded.size}, dns=${dns.ifEmpty { "(from the server)" }}"
+                    "dns=${dns.ifEmpty { "(from the server)" }}"
             )
 
             ContextCompat.startForegroundService(
@@ -236,7 +232,6 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
                     .putExtra(L2tpVpnService.EXTRA_PSK, VPN_GATE_SECRET)
                     .putExtra(L2tpVpnService.EXTRA_PROPOSAL, proposalIndex)
                     .putExtra(L2tpVpnService.EXTRA_DNS, dns)
-                    .putExtra(L2tpVpnService.EXTRA_EXCLUDED_APPS, excluded.toTypedArray())
             )
         } catch (e: Exception) {
             log("Attempt $attempt: could not start the L2TP service: $e")
@@ -399,42 +394,6 @@ internal object L2tpBridge : L2tpVpnService.Callbacks {
         return if (getBooleanPrefValue(OscPrefKey.RECONNECTION_ENABLED, prefs)) {
             getIntPrefValue(OscPrefKey.RECONNECTION_COUNT, prefs)
         } else 0
-    }
-
-    // ---- settings -> what the service needs ------------------------------------------------------
-
-    // Same rule as the other tunnels: Iranian apps and the apps the user picked connect directly.
-    private fun excludedApps(prefs: SharedPreferences): List<String> {
-        if (!prefs.getBoolean(IranApps.KEY_ENABLED, true)) return emptyList()
-
-        val packages = HashSet<String>()
-        prefs.getStringSet(IranApps.KEY_LIST, null)?.let { packages.addAll(it) }
-        packages.addAll(getSetPrefValue(OscPrefKey.ROUTE_SELECTED_APPS, prefs))
-
-        return packages.toList()
-    }
-
-    // "Iranian sites connect directly" switch. Android 13 and newer: the ranges are excluded from one default
-    // route (like SSTP does). Older Android: everything except the ranges is routed. Empty: everything.
-    private fun routeSpec(app: Context, prefs: SharedPreferences): L2tpVpnService.RouteSpec {
-        if (!prefs.getBoolean(IranRanges.KEY_ENABLED, false)) return L2tpVpnService.RouteSpec()
-
-        val ranges = IranRanges.load(app)
-        if (ranges.isEmpty()) return L2tpVpnService.RouteSpec()
-
-        return try {
-            if (Build.VERSION.SDK_INT >= 33) {
-                val excluded = IranRanges.toCidrs(ranges)
-                if (excluded.size > IranRanges.MAX_ROUTES) L2tpVpnService.RouteSpec()
-                else L2tpVpnService.RouteSpec(excludedRoutes = excluded.map { (a, l) -> "${IranRanges.format(a)}/$l" })
-            } else {
-                val routes = IranRanges.complementCidrs(ranges)
-                if (routes.size > IranRanges.MAX_ROUTES) L2tpVpnService.RouteSpec()
-                else L2tpVpnService.RouteSpec(routes = routes.map { (a, l) -> "${IranRanges.format(a)}/$l" })
-            }
-        } catch (_: Exception) {
-            L2tpVpnService.RouteSpec()
-        }
     }
 
     // ---- log file (same folder as the other logs) -----------------------------------------------------

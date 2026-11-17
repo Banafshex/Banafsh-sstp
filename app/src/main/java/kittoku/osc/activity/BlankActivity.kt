@@ -2,17 +2,14 @@ package kittoku.osc.activity
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
 import kittoku.osc.R
 import kittoku.osc.databinding.ActivityBlankBinding
-import kittoku.osc.fragment.AppsFragment
 import kittoku.osc.fragment.ProfilesFragment
 import kittoku.osc.fragment.SaveCertFragment
 import kittoku.osc.fragment.SettingFragment
 
 internal const val BLANK_ACTIVITY_TYPE_PROFILES = 0
-internal const val BLANK_ACTIVITY_TYPE_APPS = 1
 internal const val BLANK_ACTIVITY_TYPE_SAVE_CERT = 2
 internal const val BLANK_ACTIVITY_TYPE_SETTINGS = 3
 
@@ -36,13 +33,8 @@ class BlankActivity : AppCompatActivity() {
                 fragment = ProfilesFragment()
             }
 
-            BLANK_ACTIVITY_TYPE_APPS -> {
-                title = getString(R.string.bs_title_apps)
-                fragment = AppsFragment()
-            }
-
             BLANK_ACTIVITY_TYPE_SAVE_CERT -> {
-                fragment = SaveCertFragment(intent)
+                fragment = SaveCertFragment()
             }
 
             BLANK_ACTIVITY_TYPE_SETTINGS -> {
@@ -54,17 +46,13 @@ class BlankActivity : AppCompatActivity() {
         }
 
         val binding = ActivityBlankBinding.inflate(layoutInflater)
-        binding.root.fitsSystemWindows = true
         setContentView(binding.root)
+        binding.root.applyTvSafeArea()
+        binding.toolbar.title = title
+        binding.toolbar.setNavigationOnClickListener { finish() }
 
-        // dark status bar icons on the light strip above the title bar
-        val nightMask = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars =
-            nightMask != android.content.res.Configuration.UI_MODE_NIGHT_YES
-
-        supportFragmentManager.beginTransaction().also {
-            it.replace(R.id.blank, fragment)
-            it.commit()
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction().replace(R.id.blank, fragment).commit()
         }
     }
 }

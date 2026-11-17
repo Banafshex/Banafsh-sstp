@@ -9,15 +9,6 @@
         android:title="@string/bs_menu_manual_server"
         android:showAsAction="never" />
     <item
-        android:id="@+id/open_settings"
-        android:title="@string/bs_menu_settings"/>
-    <item
-        android:id="@+id/send_server"
-        android:title="@string/bs_menu_send_server"/>
-    <item
-        android:id="@+id/receive_server"
-        android:title="@string/bs_menu_receive_server"/>
-    <item
         android:id="@+id/check_update"
         android:title="@string/bs_menu_check_update"/>
     <!-- Hidden from the menu to keep it simple; the code behind them is kept for later use. -->

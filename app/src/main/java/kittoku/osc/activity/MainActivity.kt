@@ -2,8 +2,6 @@ package kittoku.osc.activity
 
 import android.Manifest
 import android.app.Dialog
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -13,73 +11,45 @@ import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
-import android.text.util.Linkify
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.fragment.app.Fragment
 import androidx.preference.EditTextPreference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceGroup
 import androidx.preference.PreferenceManager
-import androidx.preference.forEach
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.google.android.material.tabs.TabLayoutMediator
+import java.io.BufferedOutputStream
 import kittoku.osc.BuildConfig
-import kittoku.osc.R
-import kittoku.osc.databinding.ActivityMainBinding
-import kittoku.osc.IranApps
-import kittoku.osc.IranRanges
+import kittoku.osc.DnsDialog
 import kittoku.osc.NewsChecker
 import kittoku.osc.NewsNotifier
-import kittoku.osc.DnsDialog
 import kittoku.osc.Protocol
 import kittoku.osc.ProtocolSwitch
-import kittoku.osc.SharedServer
-import kittoku.osc.ThemeMode
-import kittoku.osc.flagEmoji
+import kittoku.osc.R
+import kittoku.osc.databinding.ActivityMainBinding
 import kittoku.osc.extension.firstEditText
-import kittoku.osc.extension.sum
 import kittoku.osc.fragment.HomeFragment
-import kittoku.osc.fragment.SettingFragment
-import kittoku.osc.preference.LIST_TYPE_DISALLOWED
+import kittoku.osc.preference.AppRouting
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.PROFILE_KEY_HEADER
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
-import kittoku.osc.preference.accessor.setStringPrefValue
 import kittoku.osc.preference.accessor.setBooleanPrefValue
-import kittoku.osc.preference.accessor.setSetPrefValue
-import kittoku.osc.preference.custom.OscPreference
+import kittoku.osc.preference.accessor.setStringPrefValue
 import kittoku.osc.preference.deserializeProfile
+import kittoku.osc.preference.ifInstalled
 import kittoku.osc.preference.importProfile
 import kittoku.osc.preference.serializeProfile
-import kittoku.osc.service.ACTION_VPN_CONNECT
-import kittoku.osc.service.ACTION_VPN_DISCONNECT
-import kittoku.osc.service.SstpVpnService
-import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.Locale
 
 private const val KEY_RECONNECT_DEFAULT_V1 = "reconnect_default_v1"
 
@@ -134,33 +104,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val scanLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val data = result.data
-
-        if (result.resultCode != RESULT_OK || data == null) {
-            return@registerForActivityResult
-        }
-
-        val server = SharedServer(
-            host = data.getStringExtra(QrScanActivity.EXTRA_HOST).orEmpty(),
-            port = data.getIntExtra(QrScanActivity.EXTRA_PORT, 443),
-            user = data.getStringExtra(QrScanActivity.EXTRA_USER).orEmpty(),
-            pass = data.getStringExtra(QrScanActivity.EXTRA_PASS).orEmpty(),
-            countryCode = data.getStringExtra(QrScanActivity.EXTRA_COUNTRY).orEmpty(),
-            verify = data.getBooleanExtra(QrScanActivity.EXTRA_VERIFY, true)
-        )
-
-        if (server.host.isNotEmpty()) {
-            showReceivedServerConfirm(server)
-        }
-    }
-
     private fun updatePreferenceView() {
         // Home refreshes itself from the preferences; Settings reads them when it is opened.
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeMode.apply(PreferenceManager.getDefaultSharedPreferences(this).getString("THEME_MODE", "system"))
         setTheme(R.style.Theme_OpenSSTPClient_NoActionBar)
         super.onCreate(savedInstanceState)
 
@@ -174,35 +122,9 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.overflowIcon = ContextCompat.getDrawable(this, R.drawable.ic_bars)?.mutate()?.apply {
             setTint(ContextCompat.getColor(this@MainActivity, R.color.bs_ink))
         }
-        // The background is light: dark icons in the status bar and the navigation bar.
-        WindowCompat.getInsetsController(window, binding.root).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(binding.container) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.setPadding(bars.left, 0, bars.right, bars.bottom)
-            insets
-        }
+        binding.root.applyTvSafeArea()
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        IranApps.ensureSeeded(this, prefs)
-        IranApps.refreshIfDue(this, prefs)
-        IranRanges.ensureSeeded(this)
-        IranRanges.refreshIfDue(this)
-
-        // The old "only these apps use the VPN" mode is gone. Keep earlier picks only if they meant
-        // "these apps connect directly"; otherwise clear them so they do not change meaning.
-        if (!uiPrefs.getBoolean("apps_rule_migrated_v2", false)) {
-            val keep = getBooleanPrefValue(OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, prefs) &&
-                    getStringPrefValue(OscPrefKey.ROUTE_APP_LIST_TYPE, prefs) == LIST_TYPE_DISALLOWED
-
-            if (!keep) setSetPrefValue(emptySet(), OscPrefKey.ROUTE_SELECTED_APPS, prefs)
-            setBooleanPrefValue(false, OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, prefs)
-            uiPrefs.edit().putBoolean("apps_rule_migrated_v2", true).apply()
-        }
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction().replace(R.id.container, HomeFragment()).commit()
@@ -264,7 +186,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun openSettings() {
+    internal fun openSettings() {
         startActivity(
             Intent(this, BlankActivity::class.java).putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_SETTINGS)
         )
@@ -272,17 +194,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.open_settings -> openSettings()
-
             R.id.manual_server -> showServerDialog()
 
             R.id.dns_settings -> DnsDialog.show(this)
 
             R.id.check_update -> UpdateUi.checkNow(this, prefs)
-
-            R.id.send_server -> startActivity(Intent(this, QrSendActivity::class.java))
-
-            R.id.receive_server -> scanLauncher.launch(Intent(this, QrScanActivity::class.java))
 
             R.id.load_profile -> {
                 profileLauncher.launch(Intent(this, BlankActivity::class.java).putExtra(
@@ -404,47 +320,6 @@ class MainActivity : AppCompatActivity() {
             it.setNegativeButton(R.string.bs_cancel) { _, _ -> }
             it.show()
         }
-    }
-
-    // ---- Receive a server by QR --------------------------------------------
-
-    private fun showReceivedServerConfirm(server: SharedServer) {
-        val label = "${flagEmoji(server.countryCode)} ${server.host}:${server.port}".trim()
-
-        AlertDialog.Builder(this)
-            .setTitle(R.string.bs_qr_confirm_title)
-            .setMessage(getString(R.string.bs_qr_confirm_msg, label))
-            .setPositiveButton(R.string.bs_qr_confirm_save) { _, _ -> applyReceivedServer(server) }
-            .setNegativeButton(R.string.bs_cancel, null)
-            .show()
-    }
-
-    private fun applyReceivedServer(server: SharedServer) {
-        uiPrefs.edit().remove("server_list").apply() // not from a list: any service may use it
-        if (!applyServerSettings(server.host, server.port, server.user, server.pass, !server.verify)) {
-            Toast.makeText(this, R.string.bs_server_set_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        uiPrefs.edit()
-            .putString("server_host", server.host)
-            .putString("server_country", server.countryCode)
-            .apply()
-        updatePreferenceView()
-
-        AlertDialog.Builder(this)
-            .setMessage(R.string.bs_qr_connect_msg)
-            .setPositiveButton(R.string.bs_yes) { _, _ ->
-                if (getBooleanPrefValue(OscPrefKey.HOME_CONNECTOR, prefs)) {
-                    // Drop the current connection first so that the new server is really used.
-                    disconnectNow()
-                    window.decorView.postDelayed({ connectNow() }, 1800)
-                } else {
-                    connectNow()
-                }
-            }
-            .setNegativeButton(R.string.bs_no, null)
-            .show()
     }
 
     // ---- Get Free Config -------------------------------------------------
@@ -570,7 +445,6 @@ class MainActivity : AppCompatActivity() {
 
     internal fun showProtocolDialog() {
         val current = ProtocolSwitch.get(this)
-        val density = resources.displayMetrics.density
         val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         var dialog: Dialog? = null
 
@@ -583,8 +457,7 @@ class MainActivity : AppCompatActivity() {
             row.findViewById<TextView>(R.id.tvProtoDesc).setText(protocol.descRes)
             row.findViewById<ImageView>(R.id.ivProtoCheck).visibility = if (selected) View.VISIBLE else View.INVISIBLE
 
-            card.strokeColor = ContextCompat.getColor(this, if (selected) R.color.bs_dialog_link else R.color.bs_dialog_stroke)
-            card.strokeWidth = ((if (selected) 2 else 1) * density).toInt()
+            card.isActivated = selected
 
             row.setOnClickListener {
                 dialog?.dismiss()
@@ -688,6 +561,13 @@ class MainActivity : AppCompatActivity() {
 
         if (getStringPrefValue(OscPrefKey.HOME_HOSTNAME, prefs).isEmpty()) {
             Toast.makeText(this, R.string.bs_connect_pick_server, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val routing = AppRouting.read(prefs)
+        if (routing.mode == AppRouting.Mode.ONLY_SELECTED &&
+            routing.packages.none { pkg -> ifInstalled { packageManager.getApplicationInfo(pkg, 0) } }) {
+            Toast.makeText(this, R.string.tv_select_app_first, Toast.LENGTH_LONG).show()
             return
         }
 

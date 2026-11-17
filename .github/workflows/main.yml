@@ -2,6 +2,11 @@ name: Build APK
 
 on:
   workflow_dispatch:
+    inputs:
+      test_on_tv:
+        description: Run the remote-navigation smoke tests on an Android TV emulator
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -13,9 +18,23 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew
-      - run: ./gradlew assembleDebug
+      - run: bash gradlew :app:testDebugUnitTest :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: Banafsh-TV-debug
           path: app/build/outputs/apk/debug/*.apk
+      - name: Enable KVM
+        if: inputs.test_on_tv
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test on Android TV
+        if: inputs.test_on_tv
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          script: bash gradlew :app:connectedDebugAndroidTest

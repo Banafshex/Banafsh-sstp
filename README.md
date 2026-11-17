@@ -1,44 +1,19 @@
-# Banafsh (بنفش)
+# Banafsh for Android TV
 
 **[فارسی](README.fa.md)** | English
 
-A simple, free SSTP VPN app for Android, made for everyday users. Pick a free server from the list, tap **Connect**, done.
+A remote-controlled SSTP and L2TP/IPsec VPN client for Android TV / Google TV (Android 6.0 or later). Use the D-pad to move, **OK** to choose and **Back** to return. The dark purple and lilac home screen shows the connection, server and protocol. Use the menu to enter a server manually or change DNS.
 
-Telegram channel: https://t.me/Banafsh_sstp
+### Split tunneling
 
-## Features
+By default all apps use the VPN. Open **Settings → Split tunneling**, enable it, choose a routing mode and select apps. Either **bypass the VPN for selected apps** or **use the VPN only for selected apps**. In the latter mode at least one selected app must be installed. The picker includes TV-launchable apps and sideloaded apps that have a conventional launcher entry. Changes are saved immediately and apply when you reconnect, with either protocol. No regional app or website exceptions are applied.
 
-- One big Connect button and a free servers list (VPN Gate), with automatic testing, status lights, speed and country flags
-- **Apps without VPN**: Iranian banks and apps connect directly; add your own apps with search
-- **Iranian sites without VPN** (experimental): Iranian sites open directly
-- Share the current server with a friend using a QR code, and receive one with the camera
-- Automatic reconnect, in-app updates and short news notices
-- Dark theme, Persian and English
+### Build and install
 
-## Screenshots
+- With JDK 21 and the Android SDK (compile SDK 36), run `bash gradlew :app:testDebugUnitTest :app:assembleDebug`. Install `app/build/outputs/apk/debug/app-debug.apk` on your TV, or use `adb install -r <path-to-apk>`.
+- Alternatively, run the **Build APK** workflow on this branch and download the `Banafsh-TV-debug` artifact. See the [remote-only smoke test](docs/android-tv-testing.md) for device checks.
+- Look for **Banafsh TV** in the TV launcher. The TV edition (`com.banafsh.sstp.tv`) installs separately from the phone app. In-app updates only use stable `tv-v…` releases with a matching `Banafsh-TV-<version>.apk`.
 
-<p align="center">
-  <img src="docs/screenshots/home.png" width="220">
-  <img src="docs/screenshots/servers.png" width="220">
-  <img src="docs/screenshots/menu.png" width="220">
-</p>
-<p align="center">
-  <img src="docs/screenshots/qr-send.png" width="220">
-  <img src="docs/screenshots/qr-receive.png" width="220">
-  <img src="docs/screenshots/settings.png" width="220">
-</p>
+Free servers are provided by [VPN Gate](https://www.vpngate.net/) volunteers and may log connections. Avoid using them for banking or other sensitive accounts.
 
-## Install
-
-1. Download the latest APK from the [Releases](https://github.com/Banafshex/Banafsh-sstp/releases) page.
-2. Open it and install. Google Play Protect may show a warning because the app is not on Google Play; tap **Install anyway**.
-
-## Please note
-
-The free servers are run by volunteers (VPN Gate) and they may keep connection logs. Do not log in to sensitive accounts such as banks through this VPN. Iranian banks do not open with a non-Iranian IP anyway, which is why the "Apps without VPN" option exists.
-
-## Credits and license
-
-Banafsh is a fork of [Open SSTP Client](https://github.com/kittoku/Open-SSTP-Client) by kittoku, released under the MIT license. Free servers come from [VPN Gate](https://www.vpngate.net/) (University of Tsukuba).
-
-Made by BANAFSHX.
+Based on [Open SSTP Client](https://github.com/kittoku/Open-SSTP-Client) by kittoku (MIT); see also the [L2TP core license](l2tp-core/LICENSE). Made by BANAFSHX.

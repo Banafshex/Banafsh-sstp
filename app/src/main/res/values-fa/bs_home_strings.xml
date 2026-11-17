@@ -6,4 +6,7 @@
     <string name="bs_nav_home">خانه</string>
     <string name="bs_nav_settings">تنظیمات</string>
     <string name="bs_menu_manual_server">ورود سرور دستی</string>
+    <string name="bs_status_no_internet">به اینترنت وصل نیستید</string>
+    <string name="bs_hint_no_internet">به‌محض برقراری اینترنت، خودکار وصل می‌شود</string>
+    <string name="bs_connect_pick_server">ابتدا یک سرور انتخاب کنید</string>
 </resources>

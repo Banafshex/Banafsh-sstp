@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_platform" translatable="false">Android TV</string>
+    <string name="tv_split_title">Split tunneling</string>
+    <string name="tv_split_enable">Enable split tunneling</string>
+    <string name="tv_split_next">Off: all apps use the VPN. Changes apply the next time you connect.</string>
+    <string name="tv_split_mode">Routing mode</string>
+    <string name="tv_choose_apps">Choose apps</string>
+    <string name="tv_apps_count">Selected apps: %1$d</string>
+    <string name="tv_bypass_selected">Selected apps bypass the VPN</string>
+    <string name="tv_only_selected">Only selected apps use the VPN</string>
+    <string-array name="tv_routing_modes">
+        <item>@string/tv_bypass_selected</item>
+        <item>@string/tv_only_selected</item>
+    </string-array>
+    <string name="tv_select_app_first">Choose at least one installed app in Settings → Split tunneling before connecting.</string>
+    <string name="tv_ob_split">By default, all apps use the VPN. In Settings → Split tunneling, choose the apps that should connect directly, or use the VPN only for the apps you select. Reconnect to apply your choices.</string>
+    <string name="tv_connect_untested">This server is still being tested. Connect now?</string>
+    <string name="tv_no_file_picker">No file picker is available on this TV.</string>
+    <string name="tv_no_handler">No app on this TV can open this action.</string>
+</resources>

@@ -1,13 +1,12 @@
 package kittoku.osc
 
 import androidx.preference.PreferenceManager
-import kittoku.osc.preference.AppString
+import kittoku.osc.preference.AppRouting
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import kittoku.osc.preference.accessor.getIntPrefValue
 import kittoku.osc.preference.accessor.getSetPrefValue
 import kittoku.osc.preference.accessor.getStringPrefValue
-import kittoku.osc.preference.getValidSelectedAppInfos
 import kittoku.osc.service.SstpVpnService
 import kittoku.osc.terminal.IPTerminal
 import kittoku.osc.terminal.SSLTerminal
@@ -79,6 +78,7 @@ internal enum class Result {
 
     // for IP
     ERR_INVALID_ADDRESS,
+    ERR_NO_SELECTED_APPS,
 
     // for INCOMING
     ERR_INVALID_PACKET_SIZE,
@@ -116,18 +116,7 @@ internal class SharedBridge(internal val service: SstpVpnService) {
     internal val currentIPv6 = ByteArray(8)
     internal val currentProposedDNS = ByteArray(4)
 
-    internal val selectedApps: List<AppString> = mutableListOf<AppString>().also {
-        if (getBooleanPrefValue(OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE, prefs)) {
-            getValidSelectedAppInfos(prefs, service.packageManager).forEach { info ->
-                it.add(
-                    AppString(
-                        info.packageName,
-                        service.packageManager.getApplicationLabel(info).toString()
-                    )
-                )
-            }
-        }
-    }
+    internal val appRouting = AppRouting.read(prefs)
 
     internal fun isEnabled(authProtocol: String): Boolean {
         return authProtocol in PPP_AUTH_PROTOCOLS

@@ -28,7 +28,7 @@ class OnboardingActivity : AppCompatActivity() {
         Page(false, "\uD83D\uDEE1\uFE0F", R.string.bs_ob2_title, R.string.bs_ob2_body),
         Page(false, "\uD83E\uDDED", R.string.bs_ob3_title, R.string.bs_ob3_body),
         Page(false, "\u26A1", R.string.bs_ob4_title, R.string.bs_ob4_body),
-        Page(false, "\uD83C\uDDEE\uD83C\uDDF7", R.string.bs_ob5_title, R.string.bs_ob5_body),
+        Page(false, "\u2699", R.string.tv_split_title, R.string.tv_ob_split),
     )
 
     private var index = 0
@@ -42,6 +42,7 @@ class OnboardingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_onboarding)
 
+        findViewById<View>(R.id.introRoot).applyTvSafeArea()
         host = findViewById(R.id.pageHost)
         dots = findViewById(R.id.dots)
         btnSkip = findViewById(R.id.btnSkip)
@@ -63,6 +64,7 @@ class OnboardingActivity : AppCompatActivity() {
 
         buildDots()
         show(index, animate = false)
+        btnNext.requestFocus()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

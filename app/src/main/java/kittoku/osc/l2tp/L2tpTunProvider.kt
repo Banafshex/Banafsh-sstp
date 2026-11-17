@@ -1,7 +1,6 @@
 package kittoku.osc.l2tp
 
 import android.app.PendingIntent
-import android.net.IpPrefix
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -13,23 +12,17 @@ import com.arcansecurity.vpn.l2tpipsec.core.util.VpnLogger
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicBoolean
+import kittoku.osc.preference.AppRouting
 
 /**
- * Creates the system TUN once PPP has handed us an address. Same idea as the library's own
- * provider, plus what Banafsh's other tunnels already do: the routes (everything, or everything except
- * the ranges the user asked to reach directly) and the apps that bypass the VPN.
+ * Routes IPv4 through the tunnel, subject only to the user-selected app rule.
  *
  * IPv6 is blackholed (a route without an address) so a dual-stack connection cannot leak around an IPv4-only tunnel.
  */
 internal class L2tpTunProvider(
     private val service: VpnService,
-    /** "a.b.c.d/len" entries; empty means everything. */
-    private val routes: List<String>,
-    /** Android 13 and newer: route everything except these "a.b.c.d/len" ranges. */
-    private val excludedRoutes: List<String>,
-    private val excludedApps: List<String>,
+    private val appRouting: AppRouting,
     private val onEstablished: (ParcelFileDescriptor) -> Unit,
     private val configureIntent: PendingIntent?,
     private val logger: VpnLogger,
@@ -42,34 +35,7 @@ internal class L2tpTunProvider(
             .setSession("Banafsh")
             .setMtu(params.mtu)
             .addAddress(params.address, params.prefixLength)
-
-        var added = 0
-        for (entry in routes) {
-            val address = entry.substringBefore('/')
-            val length = entry.substringAfter('/', "").toIntOrNull() ?: continue
-
-            runCatching { builder.addRoute(address, length) }
-                .onSuccess { added++ }
-                .onFailure { log.w("Rejecting the route $entry", it) }
-        }
-
-        var excludedRouteCount = 0
-        if (added == 0 && excludedRoutes.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // The cheap way to keep a long list of ranges out of the VPN (the system keeps one default route).
-            builder.addRoute("0.0.0.0", 0)
-            added = 1
-
-            for (entry in excludedRoutes) {
-                val length = entry.substringAfter('/', "").toIntOrNull() ?: continue
-
-                runCatching { builder.excludeRoute(IpPrefix(InetAddress.getByName(entry.substringBefore('/')), length)) }
-                    .onSuccess { excludedRouteCount++ }
-            }
-        }
-
-        if (added == 0) {
-            builder.addRoute("0.0.0.0", 0)
-        }
+            .addRoute("0.0.0.0", 0)
 
         params.dnsServers.forEach { dns ->
             runCatching { builder.addDnsServer(dns) }
@@ -85,10 +51,9 @@ internal class L2tpTunProvider(
                 .onFailure { log.w("Could not install the IPv6 blackhole route", it) }
         }
 
-        var excluded = 0
-        for (packageName in excludedApps) {
-            // A package that is not installed throws: that is normal for a long list.
-            if (runCatching { builder.addDisallowedApplication(packageName) }.isSuccess) excluded++
+        if (!appRouting.applyTo(builder)) {
+            log.w("No selected VPN app is installed; not establishing an unrestricted tunnel")
+            return null
         }
 
         builder.setBlocking(true)
@@ -107,7 +72,7 @@ internal class L2tpTunProvider(
         log.i(
             "TUN up: ${params.address}/${params.prefixLength} mtu=${params.mtu} " +
                 "dns=${params.dnsServers.joinToString(",").ifEmpty { "(none)" }} " +
-                "routes=${if (added == 0) 1 else added} excludedRoutes=$excludedRouteCount bypassApps=$excluded " +
+                "appRouting=${appRouting.mode} " +
                 "ipv6=${if (params.blockIpv6) "blocked" else "untouched"}",
         )
         onEstablished(descriptor)

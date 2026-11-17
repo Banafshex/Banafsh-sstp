@@ -11,7 +11,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.util.Log as AndroidLog
 import androidx.core.app.NotificationCompat
+import androidx.preference.PreferenceManager
 import com.arcansecurity.vpn.l2tpipsec.core.crypto.DhGroup
 import com.arcansecurity.vpn.l2tpipsec.core.crypto.EspEncryption
 import com.arcansecurity.vpn.l2tpipsec.core.crypto.EspIntegrity
@@ -28,11 +30,11 @@ import com.arcansecurity.vpn.l2tpipsec.core.tunnel.TunnelStats
 import com.arcansecurity.vpn.l2tpipsec.core.tunnel.VpnConfig
 import com.arcansecurity.vpn.l2tpipsec.core.util.LogLevel
 import com.arcansecurity.vpn.l2tpipsec.core.util.VpnLogger
-import kittoku.osc.R
-import kittoku.osc.activity.MainActivity
 import java.net.InetAddress
 import java.net.UnknownHostException
-import android.util.Log as AndroidLog
+import kittoku.osc.R
+import kittoku.osc.activity.MainActivity
+import kittoku.osc.preference.AppRouting
 
 /**
  * The algorithm sets tried one after another. VPN Gate runs SoftEther, whose IPsec server accepts
@@ -63,14 +65,6 @@ internal object L2tpProposals {
 /** Runs the L2TP/IPsec stack of :l2tp-core inside a VpnService and reports to [Callbacks] (the bridge). */
 class L2tpVpnService : VpnService() {
 
-    /** What the bridge wants routed. Passed in memory: thousands of entries do not fit in an Intent. */
-    class RouteSpec(
-        /** "a.b.c.d/len" entries to route; empty means everything. */
-        val routes: List<String> = emptyList(),
-        /** Android 13 and newer: everything is routed except these ranges. */
-        val excludedRoutes: List<String> = emptyList(),
-    )
-
     interface Callbacks {
         fun onTunnelState(state: TunnelState, detail: String?)
         fun onTunnelConnected(info: TunnelInfo)
@@ -91,7 +85,6 @@ class L2tpVpnService : VpnService() {
         const val EXTRA_PSK = "psk"
         const val EXTRA_PROPOSAL = "proposal"
         const val EXTRA_DNS = "dns"
-        const val EXTRA_EXCLUDED_APPS = "excluded_apps"
 
         private const val CHANNEL_ID = "banafsh_l2tp"
         private const val NOTIFICATION_ID = 4721
@@ -100,9 +93,6 @@ class L2tpVpnService : VpnService() {
 
         @Volatile
         var callbacks: Callbacks? = null
-
-        @Volatile
-        var routeSpec: RouteSpec = RouteSpec()
 
         @Volatile
         var isRunning = false
@@ -209,17 +199,16 @@ class L2tpVpnService : VpnService() {
             return
         }
 
-        val spec = routeSpec
-        val excluded = intent.getStringArrayExtra(EXTRA_EXCLUDED_APPS)?.toList().orEmpty()
+        val appRouting = AppRouting.read(PreferenceManager.getDefaultSharedPreferences(this))
 
         stopRequested = false
         debugLogging = true
         isRunning = true
 
-        worker = Thread({ runTunnel(config, spec, excluded) }, "L2tpTunnel").also { it.start() }
+        worker = Thread({ runTunnel(config, appRouting) }, "L2tpTunnel").also { it.start() }
     }
 
-    private fun runTunnel(config: VpnConfig, spec: RouteSpec, excluded: List<String>) {
+    private fun runTunnel(config: VpnConfig, appRouting: AppRouting) {
         try {
             val address = try {
                 InetAddress.getByName(config.serverHost)
@@ -233,9 +222,7 @@ class L2tpVpnService : VpnService() {
 
             val tunProvider = L2tpTunProvider(
                 service = this,
-                routes = spec.routes,
-                excludedRoutes = spec.excludedRoutes,
-                excludedApps = excluded,
+                appRouting = appRouting,
                 onEstablished = { descriptor ->
                     tunDescriptor.getAndSet(descriptor)?.let { stale -> runCatching { stale.close() } }
                 },

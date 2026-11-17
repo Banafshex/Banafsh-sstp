@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/serverRoot"
     android:background="@drawable/bg_app"
     android:orientation="vertical">
 
@@ -10,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        android:fitsSystemWindows="true"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -45,14 +45,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:alpha="0.75"
-                android:textSize="13sp" />
+                android:textColor="@color/bs_ink_soft"
+                android:textSize="17sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnTestAll"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="44dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="10dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
@@ -61,7 +61,7 @@
                 android:textColor="@color/banafsh_purple"
                 android:textStyle="bold"
                 app:cornerRadius="22dp"
-                app:strokeColor="@color/banafsh_purple"
+                app:strokeColor="@color/tv_card_stroke"
                 app:strokeWidth="2dp" />
         </LinearLayout>
 
@@ -72,9 +72,9 @@
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="10dp"
-            android:alpha="0.75"
+            android:textColor="@color/bs_ink_soft"
             android:text="@string/bs_quality_hint"
-            android:textSize="12sp"
+            android:textSize="15sp"
             android:visibility="gone" />
 
         <FrameLayout

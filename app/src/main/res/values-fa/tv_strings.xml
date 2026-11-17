@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">بنفش برای تلویزیون</string>
+    <string name="tv_split_title">تونل‌سازی تفکیکی</string>
+    <string name="tv_split_enable">فعال‌سازی تونل‌سازی تفکیکی</string>
+    <string name="tv_split_next">در حالت خاموش، همهٔ برنامه‌ها از VPN استفاده می‌کنند. تغییرات از اتصال بعدی اعمال می‌شوند.</string>
+    <string name="tv_split_mode">روش مسیریابی</string>
+    <string name="tv_choose_apps">انتخاب برنامه‌ها</string>
+    <string name="tv_apps_count">تعداد برنامه‌های انتخاب‌شده: %1$d</string>
+    <string name="tv_bypass_selected">برنامه‌های انتخاب‌شده بدون VPN وصل شوند</string>
+    <string name="tv_only_selected">فقط برنامه‌های انتخاب‌شده از VPN استفاده کنند</string>
+    <string name="tv_select_app_first">پیش از اتصال، در بخش «تونل‌سازی تفکیکی» تنظیمات، دست‌کم یک برنامهٔ نصب‌شده انتخاب کنید.</string>
+    <string name="tv_ob_split">به‌طور پیش‌فرض همهٔ برنامه‌ها از VPN استفاده می‌کنند. در تنظیمات، بخش «تونل‌سازی تفکیکی»، برنامه‌هایی را که باید مستقیم وصل شوند انتخاب کنید، یا VPN را فقط برای برنامه‌های انتخاب‌شده فعال کنید. تغییرات از اتصال بعدی اعمال می‌شوند.</string>
+    <string name="tv_connect_untested">آزمایش این سرور هنوز تمام نشده است. اکنون وصل می‌شوید؟</string>
+    <string name="tv_no_file_picker">روی این تلویزیون برنامه‌ای برای انتخاب فایل نصب نیست.</string>
+    <string name="tv_no_handler">برنامه‌ای برای انجام این کار روی تلویزیون نصب نیست.</string>
+</resources>

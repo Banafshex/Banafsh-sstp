@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/bg_app" android:orientation="vertical">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageButton android:id="@+id/btnBack"
+            android:layout_width="48dp" android:layout_height="48dp"
+            android:background="@drawable/tv_item_selector" android:src="@drawable/ic_bp_back"
+            android:contentDescription="@string/bs_close" android:focusable="true" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:layout_marginStart="12dp"
+            android:text="@string/tv_choose_apps" android:textColor="@color/bs_ink"
+            android:textSize="24sp" android:textStyle="bold" />
+        <EditText android:id="@+id/etSearch" android:layout_width="240dp" android:layout_height="48dp"
+            android:background="@drawable/bg_bp_search" android:foreground="@drawable/tv_item_selector"
+            android:paddingStart="16dp" android:paddingEnd="16dp" android:singleLine="true"
+            android:inputType="text" android:imeOptions="actionDone" android:hint="@string/bs_bp_search"
+            android:importantForAutofill="no" android:textSize="16sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/tvRule" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginVertical="8dp" android:textColor="@color/bs_ink_soft" android:textSize="16sp" />
+    <TextView android:id="@+id/tvLoading" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center" android:padding="24dp" android:text="@string/bs_bp_loading" android:textSize="16sp" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvApps"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:background="@drawable/bg_server_card" android:padding="8dp" />
+</LinearLayout>

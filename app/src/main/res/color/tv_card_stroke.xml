@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:color="@color/tv_focus" />
+    <item android:state_activated="true" android:color="@color/bs_dialog_link" />
+    <item android:color="@color/bs_card_stroke" />
+</selector>

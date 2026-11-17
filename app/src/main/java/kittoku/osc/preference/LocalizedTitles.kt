@@ -17,10 +17,6 @@ internal fun localizedTitle(context: Context, key: OscPrefKey): String? {
         OscPrefKey.PROXY_PORT -> R.string.bs_pref_proxy_port
         OscPrefKey.PROXY_USERNAME -> R.string.bs_pref_proxy_user
         OscPrefKey.PROXY_PASSWORD -> R.string.bs_pref_proxy_pass
-        OscPrefKey.ROUTE_DO_ENABLE_APP_BASED_RULE -> R.string.bs_pref_app_rule
-        OscPrefKey.ROUTE_SELECTED_APPS -> R.string.bs_pref_app_select
-        OscPrefKey.ROUTE_DO_SHOW_BACKGROUND_APPS -> R.string.bs_pref_show_bg
-        OscPrefKey.ROUTE_APP_LIST_TYPE -> R.string.bs_pref_list_type
         else -> return null
     }
 

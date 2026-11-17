@@ -5,7 +5,7 @@
         android:centerY="0.3"
         android:endColor="#338B5CF6"
         android:gradientRadius="75%p"
-        android:startColor="#D9FFFFFF"
+        android:startColor="#624578"
         android:type="radial" />
     <stroke android:width="2dp" android:color="#998B5CF6" />
 </shape>

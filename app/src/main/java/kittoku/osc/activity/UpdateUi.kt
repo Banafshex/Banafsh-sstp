@@ -1,5 +1,6 @@
 package kittoku.osc.activity
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -246,9 +247,11 @@ internal object UpdateUi {
             .setMessage(R.string.bs_update_perm_body)
             .setPositiveButton(R.string.bs_update_perm_continue) { _, _ ->
                 if (Build.VERSION.SDK_INT >= 26) {
-                    activity.startActivity(
-                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
-                    )
+                    try {
+                        activity.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}")))
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(activity, R.string.tv_no_handler, Toast.LENGTH_LONG).show()
+                    }
                 }
             }
             .setNegativeButton(R.string.bs_cancel, null)

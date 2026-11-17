@@ -6,6 +6,7 @@
     android:background="@drawable/bg_server_card"
     android:clickable="true"
     android:focusable="true"
+    android:foreground="@drawable/tv_item_selector"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingStart="16dp"
@@ -23,7 +24,7 @@
             android:id="@+id/tvCountryTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
@@ -31,8 +32,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:textColor="#8B5CF6"
-            android:textSize="12sp"
+            android:textColor="@color/bs_accent"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -42,7 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:alpha="0.75"
-        android:textSize="13sp" />
+        android:textSize="16sp" />
 
     <TextView
         android:layout_width="wrap_content"

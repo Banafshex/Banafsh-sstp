@@ -14,14 +14,10 @@ import androidx.activity.OnBackPressedCallback
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -130,14 +126,7 @@ class ServerListActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         title = getString(R.string.bs_servers_title)
 
-        WindowCompat.getInsetsController(window, toolbar).isAppearanceLightStatusBars = true
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.body)) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.setPadding(bars.left, 0, bars.right, bars.bottom)
-            insets
-        }
+        findViewById<View>(R.id.serverRoot).applyTvSafeArea()
 
         tvNote = findViewById(R.id.tvTestNote)
         tvHint = findViewById(R.id.tvHint)
@@ -167,6 +156,7 @@ class ServerListActivity : AppCompatActivity() {
     override fun onDestroy() {
         generation++
         executor?.shutdownNow()
+        handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 
@@ -324,6 +314,7 @@ class ServerListActivity : AppCompatActivity() {
 
     private fun showCountries() {
         stopTests()
+        val previous = currentCountry
         currentCountry = null
         visible = emptyList()
 
@@ -332,7 +323,7 @@ class ServerListActivity : AppCompatActivity() {
         btnTestAll.visibility = View.GONE
 
         updateNote()
-        render()
+        render(previous ?: "first")
     }
 
     private fun showServers(code: String) {
@@ -472,8 +463,12 @@ class ServerListActivity : AppCompatActivity() {
     private fun currentHost(): String =
         getStringPrefValue(OscPrefKey.HOME_HOSTNAME, PreferenceManager.getDefaultSharedPreferences(this))
 
-    private fun render() {
-        if (currentCountry == null) renderCountries() else renderServers()
+    private fun render(focusTag: Any? = list.findFocus()?.tag) {
+        if (currentCountry == null) renderCountries() else renderServers(focusTag as? Int)
+        // Ping results reorder this list. Follow the same server, not its old screen position.
+        if (focusTag != null && !list.isInTouchMode) {
+            (list.findViewWithTag<View>(focusTag) ?: list.getChildAt(0))?.requestFocus()
+        }
     }
 
     private fun renderCountries() {
@@ -504,12 +499,13 @@ class ServerListActivity : AppCompatActivity() {
                 if (indices.size == 1) getString(R.string.bs_country_servers_one)
                 else getString(R.string.bs_country_servers, indices.size)
 
+            row.tag = code
             row.setOnClickListener { showServers(code) }
             list.addView(row)
         }
     }
 
-    private fun renderServers() {
+    private fun renderServers(focusedIndex: Int?) {
         list.removeAllViews()
 
         // Servers that answered come first: by quality tier (good first), inside a tier by the lowest ping.
@@ -530,9 +526,12 @@ class ServerListActivity : AppCompatActivity() {
         )
 
         val purple = getColor(R.color.banafsh_purple)
-        val greyButton = 0xFFC9C2DD.toInt()
+        val greyButton = getColor(R.color.bs_ink_mute)
 
-        val shown = if (showAll || order.size <= ROWS_LIMIT) order else order.take(ROWS_LIMIT)
+        val shown = if (showAll || order.size <= ROWS_LIMIT) order else order.take(ROWS_LIMIT).toMutableList().apply {
+            // Do not evict the focused server when faster ones enter the first page.
+            if (focusedIndex != null && focusedIndex in order && focusedIndex !in this) add(focusedIndex)
+        }
         val showPort = ProtocolSwitch.get(this) == Protocol.SSTP
 
         for (index in shown) {
@@ -619,7 +618,6 @@ class ServerListActivity : AppCompatActivity() {
                     pillText.setTextColor(0xFF8A1C1C.toInt())
                     pillText.text = getString(R.string.bs_server_failed) + " ✕"
                     button.backgroundTintList = ColorStateList.valueOf(greyButton)
-                    row.alpha = 0.6f
                 }
 
                 else -> {
@@ -628,14 +626,14 @@ class ServerListActivity : AppCompatActivity() {
                     pillText.setTextColor(0xFF5B4A8C.toInt())
                     pillText.text = getString(R.string.bs_pill_testing)
                     button.backgroundTintList = ColorStateList.valueOf(greyButton)
-                    button.isEnabled = false
                 }
             }
 
-            button.setOnClickListener {
-                if (result == ServerTester.FAILED) {
+            row.tag = index
+            row.setOnClickListener {
+                if (!vpnOn && result <= 0) {
                     AlertDialog.Builder(this)
-                        .setMessage(R.string.bs_connect_anyway)
+                        .setMessage(if (result == PENDING) R.string.tv_connect_untested else R.string.bs_connect_anyway)
                         .setPositiveButton(R.string.bs_connect) { _, _ -> choose(server) }
                         .setNegativeButton(R.string.bs_cancel, null)
                         .show()
@@ -649,10 +647,11 @@ class ServerListActivity : AppCompatActivity() {
 
         if (shown.size < order.size) {
             val more = MaterialButton(this)
+            more.tag = "more"
             more.text = getString(R.string.bs_show_all, order.size)
             more.setOnClickListener {
                 showAll = true
-                render()
+                render(order.first { it !in shown })
             }
             list.addView(more)
         }

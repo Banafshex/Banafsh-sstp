@@ -1,10 +1,12 @@
 package kittoku.osc.fragment
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -13,22 +15,22 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import kittoku.osc.R
-import kittoku.osc.activity.BLANK_ACTIVITY_TYPE_APPS
-import kittoku.osc.activity.BlankActivity
-import kittoku.osc.activity.EXTRA_KEY_TYPE
-import kittoku.osc.ThemeMode
+import kittoku.osc.activity.AppPickerActivity
 import kittoku.osc.activity.showAboutDialog
 import kittoku.osc.activity.showLogDialog
+import kittoku.osc.preference.LIST_TYPE_ALLOWED
+import kittoku.osc.preference.LIST_TYPE_DISALLOWED
 import kittoku.osc.preference.OscPrefKey
+import kittoku.osc.preference.accessor.getSetPrefValue
+import kittoku.osc.preference.accessor.getStringPrefValue
 import kittoku.osc.preference.accessor.setURIPrefValue
 import kittoku.osc.preference.custom.DirectoryPreference
-import kittoku.osc.preference.custom.RouteSelectedAppsPreference
 
 internal class SettingFragment : PreferenceFragmentCompat() {
     private lateinit var prefs: SharedPreferences
     private lateinit var certDirPref: DirectoryPreference
     private lateinit var logDirPref: DirectoryPreference
-    private lateinit var selectAppsPref: RouteSelectedAppsPreference
+    private lateinit var selectAppsPref: Preference
 
     private val certDirLauncher = registerForActivityResult(StartActivityForResult()) { result ->
         val uri = if (result.resultCode == Activity.RESULT_OK) result.data?.data?.also {
@@ -54,10 +56,6 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         logDirPref.updateView()
     }
 
-    private val selectAppsLauncher = registerForActivityResult(StartActivityForResult()) {
-        selectAppsPref.updateView()
-    }
-
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.settings, rootKey)
 
@@ -69,11 +67,10 @@ internal class SettingFragment : PreferenceFragmentCompat() {
 
         setCertDirListener()
         setLogDirListener()
-        setSelectAppsListener()
+        setSplitTunneling()
         setAboutListener()
         setTelegramListener()
         setLogListener()
-        setThemeListener()
         setLanguageListener()
         setAdvancedToggle()
     }
@@ -119,7 +116,11 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         certDirPref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also {
                 it.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                certDirLauncher.launch(it)
+                try {
+                    certDirLauncher.launch(it)
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(requireContext(), R.string.tv_no_file_picker, Toast.LENGTH_LONG).show()
+                }
             }
 
             true
@@ -130,22 +131,32 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         logDirPref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
             Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).also {
                 it.flags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                logDirLauncher.launch(it)
+                try {
+                    logDirLauncher.launch(it)
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(requireContext(), R.string.tv_no_file_picker, Toast.LENGTH_LONG).show()
+                }
             }
 
             true
         }
     }
 
-    private fun setSelectAppsListener() {
-        selectAppsPref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            Intent(requireContext(), BlankActivity::class.java).also {
-                it.putExtra(EXTRA_KEY_TYPE, BLANK_ACTIVITY_TYPE_APPS)
-                selectAppsLauncher.launch(it)
-            }
-
+    private fun setSplitTunneling() {
+        findPreference<ListPreference>(OscPrefKey.ROUTE_APP_LIST_TYPE.name)!!.apply {
+            entryValues = arrayOf(LIST_TYPE_DISALLOWED, LIST_TYPE_ALLOWED)
+            value = getStringPrefValue(OscPrefKey.ROUTE_APP_LIST_TYPE, prefs)
+        }
+        selectAppsPref.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(), AppPickerActivity::class.java))
             true
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val count = getSetPrefValue(OscPrefKey.ROUTE_SELECTED_APPS, prefs).size
+        selectAppsPref.summary = getString(R.string.tv_apps_count, count)
     }
 
     private fun setAboutListener() {
@@ -162,8 +173,8 @@ internal class SettingFragment : PreferenceFragmentCompat() {
             Preference.OnPreferenceClickListener {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/Banafsh_sstp")))
-                } catch (e: Exception) {
-                    // no app can open the link
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(requireContext(), R.string.tv_no_handler, Toast.LENGTH_LONG).show()
                 }
 
                 true
@@ -174,15 +185,6 @@ internal class SettingFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("CONNECTION_LOG")?.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
                 (activity as? AppCompatActivity)?.let { showLogDialog(it) }
-
-                true
-            }
-    }
-
-    private fun setThemeListener() {
-        findPreference<ListPreference>("THEME_MODE")?.onPreferenceChangeListener =
-            Preference.OnPreferenceChangeListener { _, newValue ->
-                ThemeMode.apply(newValue as? String)
 
                 true
             }
