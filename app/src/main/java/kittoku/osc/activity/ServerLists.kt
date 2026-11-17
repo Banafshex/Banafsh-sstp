@@ -7,6 +7,8 @@ import kittoku.osc.ServerEndpoint
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 // Each service has its own list file. SSTP: the full list first; the short list that older
 // versions use stays as a fallback (for example before the first refresh that creates servers_v2.json).
@@ -86,7 +88,19 @@ internal class ServerCatalog(context: Context, private val protocol: Protocol) {
         return Local(parse(bundled), false)
     }
 
-    fun refresh(): List<FreeServer> {
+    companion object {
+        private val downloads = Executors.newFixedThreadPool(2)
+        private val inFlight = mutableMapOf<Protocol, Future<List<FreeServer>>>()
+    }
+
+    // A quick OK must not keep cancelling the refresh at mirror #1, leaving only an old APK seed.
+    // The download holds only application context. Pickers may stop waiting or join it on reopen.
+    fun refreshAsync(): Future<List<FreeServer>> = synchronized(inFlight) {
+        inFlight[protocol]?.takeUnless { it.isDone } ?: downloads.submit<List<FreeServer>> { refresh() }
+            .also { inFlight[protocol] = it }
+    }
+
+    private fun refresh(): List<FreeServer> {
         for (url in listUrls(protocol)) {
             if (Thread.currentThread().isInterrupted) break
             val text = httpGetListFile(url) ?: continue

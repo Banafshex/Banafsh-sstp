@@ -29,6 +29,7 @@ import kittoku.osc.flagEmoji
 import kittoku.osc.preference.OscPrefKey
 import kittoku.osc.preference.accessor.getBooleanPrefValue
 import java.util.Locale
+import java.util.concurrent.ExecutionException
 import kotlin.concurrent.thread
 
 private enum class Quality { GOOD, MEDIUM, BAD, UNKNOWN }
@@ -165,7 +166,13 @@ class ServerListActivity : AppCompatActivity() {
             val local = catalog.local()
             if (local.servers.isNotEmpty()) handler.post { offerCatalog(local.servers) }
             if (local.fresh) return@thread
-            val refreshed = catalog.refresh()
+            val refreshed = try {
+                catalog.refreshAsync().get()
+            } catch (_: InterruptedException) {
+                return@thread // picker closed; the application-scoped refresh can still update the cache
+            } catch (_: ExecutionException) {
+                emptyList()
+            }
             handler.post {
                 if (isFinishing || isDestroyed) return@post
                 if (refreshed.isNotEmpty()) {

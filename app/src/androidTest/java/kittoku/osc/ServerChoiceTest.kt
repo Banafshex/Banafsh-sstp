@@ -80,6 +80,25 @@ class ServerChoiceTest {
         }
     }
 
+    @Test fun catalogAddressIsScopedToTheChosenHostAndProtocolAndExpires() {
+        var now = System.currentTimeMillis()
+        val selection = CatalogSelection(context) { now }
+        val endpoint = ServerEndpoint("fixture.invalid", "127.0.0.1")
+        try {
+            selection.save(endpoint, "NL", Protocol.L2TP, 0)
+            assertEquals(endpoint.ip, selection.endpoint(endpoint.host, Protocol.L2TP).ip)
+            assertNull(selection.endpoint(endpoint.host, Protocol.SSTP).ip)
+            assertNull(selection.endpoint("manual.invalid", Protocol.L2TP).ip)
+            now += 24 * 60 * 60_000L
+            assertNull(selection.endpoint(endpoint.host, Protocol.L2TP).ip)
+            selection.save(endpoint, "NL", Protocol.L2TP, 0)
+            selection.clear()
+            assertNull(selection.endpoint(endpoint.host, Protocol.L2TP).ip)
+        } finally {
+            selection.clear()
+        }
+    }
+
     @Test fun silentCountryLeavesTestingAndOkReturnsServerWithoutInventingAPing() {
         ServerSocket(0, 128, loopback).use { peer ->
             seed(peer.localPort, 80) // more than can finish before the country deadline
