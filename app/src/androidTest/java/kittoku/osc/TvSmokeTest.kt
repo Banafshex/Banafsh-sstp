@@ -15,10 +15,13 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.action.ViewActions.pressKey
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.hamcrest.Matchers.sameInstance
 import kittoku.osc.activity.AppPickerActivity
+import kittoku.osc.activity.BlankActivity
 import kittoku.osc.activity.MainActivity
 import kittoku.osc.preference.OscPrefKey
 import org.junit.Assert.*
@@ -33,7 +36,10 @@ class TvOnlyFixtureActivity : Activity()
 class TvSmokeTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
-    private fun key(code: Int) = onView(isRoot()).perform(pressKey(code))
+    private fun key(code: Int) {
+        onView(isRoot()).perform(pressKey(code))
+        instrumentation.waitForIdleSync()
+    }
 
     @Test fun launchFromTvAndNavigateToSettingsWithRemote() {
         context.getSharedPreferences("banafsh_ui", Context.MODE_PRIVATE).edit()
@@ -59,8 +65,15 @@ class TvSmokeTest {
             onView(withId(R.id.cardProtocol)).check(matches(isFocused()))
             key(KeyEvent.KEYCODE_DPAD_DOWN)
             onView(withId(R.id.cardSettings)).check(matches(isFocused()))
-            key(KeyEvent.KEYCODE_DPAD_CENTER)
-            onView(withText(R.string.tv_split_enable)).check(matches(isDisplayed()))
+            val monitor = instrumentation.addMonitor(BlankActivity::class.java.name, null, false)
+            try {
+                key(KeyEvent.KEYCODE_DPAD_CENTER)
+                val settings = requireNotNull(instrumentation.waitForMonitorWithTimeout(monitor, 5000))
+                onView(withText(R.string.tv_split_enable)).inRoot(withDecorView(sameInstance(settings.window.decorView)))
+                    .check(matches(isDisplayed()))
+            } finally {
+                instrumentation.removeMonitor(monitor)
+            }
             pressBack()
             onView(withId(R.id.cardSettings)).check(matches(isFocused()))
         }
@@ -85,7 +98,9 @@ class TvSmokeTest {
             }
             assertTrue("TV-only package not found", loaded.await(10, TimeUnit.SECONDS))
             key(KeyEvent.KEYCODE_DPAD_DOWN)
+            onView(withText("TV picker fixture")).check(matches(isFocused()))
             key(KeyEvent.KEYCODE_DPAD_CENTER)
+            onView(withText("TV picker fixture")).check(matches(isChecked()))
             assertEquals(setOf(pkg), prefs.getStringSet(pref, emptySet()))
             key(KeyEvent.KEYCODE_DPAD_CENTER)
             assertTrue(prefs.getStringSet(pref, emptySet())!!.isEmpty())

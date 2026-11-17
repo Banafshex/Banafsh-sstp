@@ -3,11 +3,15 @@ package kittoku.osc.activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.CheckedTextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -48,6 +52,17 @@ class AppPickerActivity : AppCompatActivity() {
         binding.rvApps.adapter = adapter
         binding.rvApps.itemAnimator = null
         binding.etSearch.doAfterTextChanged { filter() }
+        // A single-line EditText otherwise consumes Down to move its cursor on some TV keyboards.
+        binding.etSearch.setOnKeyListener { _, code, event ->
+            code == KeyEvent.KEYCODE_DPAD_DOWN && event.action == KeyEvent.ACTION_DOWN && focusResults()
+        }
+        binding.etSearch.setOnEditorActionListener { _, action, _ ->
+            if (action == EditorInfo.IME_ACTION_DONE) {
+                WindowCompat.getInsetsController(window, binding.root).hide(WindowInsetsCompat.Type.ime())
+                focusResults()
+                true
+            } else false
+        }
 
         // Only query launch activities declared in <queries>. Some TV apps have no phone launcher at all.
         worker.execute {
@@ -67,6 +82,8 @@ class AppPickerActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun focusResults(): Boolean = binding.rvApps.getChildAt(0)?.requestFocus() == true
 
     private fun filter() {
         val installed = apps ?: return
